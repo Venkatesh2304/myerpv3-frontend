@@ -14,7 +14,6 @@ type User = {
 
 export function UserAvatar() {
   const { data: user, isLoading: userIsLoading } = useGetIdentity<User>();
-
   if (userIsLoading || !user) {
     return <Skeleton className={cn("h-10", "w-10", "rounded-full")} />;
   }

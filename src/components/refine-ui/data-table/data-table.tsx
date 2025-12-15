@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 type DataTableProps<TData extends BaseRecord> = {
@@ -36,10 +37,10 @@ export function DataTable<TData extends BaseRecord>({
       setPageSize,
     },
   } = table;
-
   const columns = getAllColumns();
   const leafColumns = table.reactTable.getAllLeafColumns();
-  const isLoading = tableQuery.isLoading;
+  const isLoading = tableQuery.isLoading || tableQuery.isFetching;
+  const hasRowSelection = table.reactTable.options.enableRowSelection;
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -85,9 +86,33 @@ export function DataTable<TData extends BaseRecord>({
           <TableHeader>
             {getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
+                {hasRowSelection && (
+                  <TableHead
+                    style={{
+                      width: 50,
+                      minWidth: 50,
+                      maxWidth: 50,
+                      position: isOverflowing.horizontal ? "sticky" : "relative",
+                      left: 0,
+                      background: isOverflowing.horizontal ? "var(--background)" : "",
+                      boxShadow: isOverflowing.horizontal ? "-4px 0 4px -4px var(--border) inset" : undefined,
+                      zIndex: isOverflowing.horizontal ? 1 : 0,
+                    }}
+                    className="pl-4"
+                  >
+                    <Checkbox
+                      checked={
+                        table.reactTable.getIsAllPageRowsSelected() ||
+                        (table.reactTable.getIsSomePageRowsSelected() && "indeterminate")
+                      }
+                      onCheckedChange={(value) => table.reactTable.toggleAllPageRowsSelected(!!value)}
+                      aria-label="Select all"
+                      className="border-gray-500"
+                    />
+                  </TableHead>
+                )}
+                {headerGroup.headers.map((header, i) => {
                   const isPlaceholder = header.isPlaceholder;
-
                   return (
                     <TableHead
                       key={header.id}
@@ -95,8 +120,9 @@ export function DataTable<TData extends BaseRecord>({
                         ...getCommonStyles({
                           column: header.column,
                           isOverflowing: isOverflowing,
-                        }),
+                        })
                       }}
+                      className={!hasRowSelection && i == 0 ? "pl-4" : ""}
                     >
                       {isPlaceholder ? null : (
                         <div className={cn("flex", "items-center", "gap-1")}>
@@ -121,6 +147,22 @@ export function DataTable<TData extends BaseRecord>({
                       key={`skeleton-row-${rowIndex}`}
                       aria-hidden="true"
                     >
+                      {hasRowSelection && (
+                        <TableCell
+                          style={{
+                            width: 50,
+                            minWidth: 50,
+                            maxWidth: 50,
+                            position: isOverflowing.horizontal ? "sticky" : "relative",
+                            left: 0,
+                            background: isOverflowing.horizontal ? "var(--background)" : "",
+                            zIndex: isOverflowing.horizontal ? 1 : 0,
+                          }}
+                          className="pl-4"
+                        >
+                          <div className="h-8" />
+                        </TableCell>
+                      )}
                       {leafColumns.map((column) => (
                         <TableCell
                           key={`skeleton-cell-${rowIndex}-${column.id}`}
@@ -140,7 +182,7 @@ export function DataTable<TData extends BaseRecord>({
                 )}
                 <TableRow>
                   <TableCell
-                    colSpan={columns.length}
+                    colSpan={columns.length + (hasRowSelection ? 1 : 0)}
                     className={cn("absolute", "inset-0", "pointer-events-none")}
                   >
                     <Loader2
@@ -166,7 +208,28 @@ export function DataTable<TData extends BaseRecord>({
                     key={row.original?.id ?? row.id}
                     data-state={row.getIsSelected() && "selected"}
                   >
-                    {row.getVisibleCells().map((cell) => {
+                    {hasRowSelection && (
+                      <TableCell
+                        style={{
+                          width: 50,
+                          minWidth: 50,
+                          maxWidth: 50,
+                          position: isOverflowing.horizontal ? "sticky" : "relative",
+                          left: 0,
+                          background: isOverflowing.horizontal ? "var(--background)" : "",
+                          zIndex: isOverflowing.horizontal ? 1 : 0,
+                        }}
+                        className="pl-4"
+                      >
+                        <Checkbox
+                          checked={row.getIsSelected()}
+                          onCheckedChange={(value) => row.toggleSelected(!!value)}
+                          aria-label="Select row"
+                          className="border-gray-500"
+                        />
+                      </TableCell>
+                    )}
+                    {row.getVisibleCells().map((cell, i) => {
                       return (
                         <TableCell
                           key={cell.id}
@@ -176,8 +239,9 @@ export function DataTable<TData extends BaseRecord>({
                               isOverflowing: isOverflowing,
                             }),
                           }}
+                          className={cn(!hasRowSelection && i == 0 ? "pl-4" : "")}
                         >
-                          <div className="truncate">
+                          <div className="truncate" title={(cell.getValue() || "").toString()}>
                             {flexRender(
                               cell.column.columnDef.cell,
                               cell.getContext()
@@ -192,7 +256,7 @@ export function DataTable<TData extends BaseRecord>({
             ) : (
               <DataTableNoData
                 isOverflowing={isOverflowing}
-                columnsLength={columns.length}
+                columnsLength={columns.length + (hasRowSelection ? 1 : 0)}
               />
             )}
           </TableBody>
@@ -224,7 +288,7 @@ function DataTableNoData({
       <TableCell
         colSpan={columnsLength}
         className={cn("relative", "text-center")}
-        style={{ height: "490px" }}
+        style={{ height: "200px" }}
       >
         <div
           className={cn(
@@ -273,14 +337,13 @@ export function getCommonStyles<TData>({
     isPinned === "left" && column.getIsLastColumn("left");
   const isFirstRightPinnedColumn =
     isPinned === "right" && column.getIsFirstColumn("right");
-
   return {
     boxShadow:
       isOverflowing.horizontal && isLastLeftPinnedColumn
         ? "-4px 0 4px -4px var(--border) inset"
         : isOverflowing.horizontal && isFirstRightPinnedColumn
-        ? "4px 0 4px -4px var(--border) inset"
-        : undefined,
+          ? "4px 0 4px -4px var(--border) inset"
+          : undefined,
     left:
       isOverflowing.horizontal && isPinned === "left"
         ? `${column.getStart("left")}px`

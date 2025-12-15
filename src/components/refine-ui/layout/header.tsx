@@ -6,14 +6,28 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import {
   useActiveAuthProvider,
+  useCustom,
+  useDataProvider,
+  useGetIdentity,
+  useList,
   useLogout,
   useRefineOptions,
 } from "@refinedev/core";
 import { LogOutIcon } from "lucide-react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
+import { useCompany } from "@/providers/company-provider";
+import { compareAsc } from "date-fns";
 
 export const Header = () => {
   const { isMobile } = useSidebar();
@@ -40,7 +54,8 @@ function DesktopHeader() {
         "z-40"
       )}
     >
-      <ThemeToggle />
+      <CompanyDropdown />
+      {/* <ThemeToggle /> */}
       <UserDropdown />
     </header>
   );
@@ -146,6 +161,53 @@ const UserDropdown = () => {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+};
+
+const CompanyDropdown = () => {
+  const { company, setCompany } = useCompany();
+  const { result: { data: companyData }, query: { isLoading } } = useCustom({
+    url: "companies",
+    method: "get"
+  });
+  const companies = companyData || [];
+
+  useEffect(() => {
+    if (isLoading) return;
+    const stored = sessionStorage.getItem("selectedCompanyId");
+    let defaultCompany: string | null = null;
+    if (stored && companies.includes(stored)) {
+      defaultCompany = stored;
+    } else if (companies.length > 0) {
+      defaultCompany = companies[0];
+    }
+    if (defaultCompany && company?.id !== defaultCompany) {
+      setCompany({ id: defaultCompany } as any);
+    }
+  }, [companies, company, setCompany, isLoading]);
+
+  if (isLoading || companies.length === 0) {
+    return <></>;
+  }
+
+  return (
+    <Select
+      value={company?.id?.toString()}
+      onValueChange={(value) => {
+        setCompany({ id: value } as any);
+      }}
+    >
+      <SelectTrigger className="w-[180px]">
+        <SelectValue placeholder="Select Company" />
+      </SelectTrigger>
+      <SelectContent>
+        {companies.map((c: any) => (
+          <SelectItem key={c} value={String(c)}>
+            {c}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 };
 

@@ -32,6 +32,7 @@ export const ListViewHeader = ({
   title: titleFromProps,
   wrapperClassName,
   headerClassName,
+  children,
 }: ListHeaderProps) => {
   const getUserFriendlyName = useUserFriendlyName();
 
@@ -39,7 +40,6 @@ export const ListViewHeader = ({
     resource: resourceFromProps,
   });
   const resourceName = identifier ?? resource?.name;
-
   const isCreateButtonVisible = canCreate ?? !!resource?.create;
 
   const title =
@@ -59,11 +59,10 @@ export const ListViewHeader = ({
       </div>
       <div className={cn("flex", "justify-between", "gap-4", headerClassName)}>
         <h2 className="text-2xl font-bold">{title}</h2>
-        {isCreateButtonVisible && (
-          <div className="flex items-center gap-2">
-            <CreateButton resource={resourceName} />
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {children}
+          {isCreateButtonVisible && <CreateButton resource={resourceName} />}
+        </div>
       </div>
     </div>
   );

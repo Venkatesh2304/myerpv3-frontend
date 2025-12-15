@@ -1,0 +1,572 @@
+{
+    "count": 3828,
+    "next": "http://43.205.224.85:8080/cheque/?limit=25&offset=25",
+    "previous": null,
+    "results": [
+        {
+            "id": 3830,
+            "cheque_date": "2025-11-13",
+            "cheque_no": "006060",
+            "party_name": "SRI BALAMURUGAN SUPER MARKET-D-D",
+            "amt": 30311.0,
+            "bank": "CUB",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 30311.0,
+                    "amt": 30311,
+                    "bill": "AB54541",
+                    "party": "SRI BALAMURUGAN SUPER MARKET-D-D"
+                }
+            ],
+            "party": "D-P1026",
+            "bank_entry": null
+        },
+        {
+            "id": 3829,
+            "cheque_date": "2025-11-16",
+            "cheque_no": "006061",
+            "party_name": "SRI BALAMURUGAN SUPER MARKET-D-D",
+            "amt": 34054.0,
+            "bank": "CUB",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 34054.0,
+                    "amt": 34054,
+                    "bill": "AB54542",
+                    "party": "SRI BALAMURUGAN SUPER MARKET-D-D"
+                }
+            ],
+            "party": "D-P1026",
+            "bank_entry": null
+        },
+        {
+            "id": 3828,
+            "cheque_date": "2025-11-13",
+            "cheque_no": "041100",
+            "party_name": "ELITE PHARMACY",
+            "amt": 3616.0,
+            "bank": "AXIS",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 2331.0,
+                    "amt": 3616,
+                    "bill": "AB57579",
+                    "party": "ELITE PHARMACY"
+                }
+            ],
+            "party": "P16087",
+            "bank_entry": null
+        },
+        {
+            "id": 3827,
+            "cheque_date": "2025-11-08",
+            "cheque_no": "002496",
+            "party_name": "ARVIND AGENCY",
+            "amt": 296143.0,
+            "bank": "KVB 650",
+            "deposit_date": "2025-11-10",
+            "collection": [
+                {
+                    "balance": 30134.0,
+                    "amt": 30134,
+                    "bill": "AB56791",
+                    "party": "ARVIND AGENCY"
+                },
+                {
+                    "balance": 63884.0,
+                    "amt": 63884,
+                    "bill": "AB56184",
+                    "party": "ARVIND AGENCY"
+                },
+                {
+                    "balance": 78789.0,
+                    "amt": 78789,
+                    "bill": "AB56624",
+                    "party": "ARVIND AGENCY"
+                },
+                {
+                    "balance": 36744.0,
+                    "amt": 36744,
+                    "bill": "AB56625",
+                    "party": "ARVIND AGENCY"
+                },
+                {
+                    "balance": 32513.0,
+                    "amt": 32513,
+                    "bill": "AB56607",
+                    "party": "ARVIND AGENCY"
+                },
+                {
+                    "balance": 1167.0,
+                    "amt": 1167,
+                    "bill": "AB56627",
+                    "party": "ARVIND AGENCY"
+                },
+                {
+                    "balance": 1765.0,
+                    "amt": 1765,
+                    "bill": "AB56613",
+                    "party": "ARVIND AGENCY"
+                },
+                {
+                    "balance": 1824.0,
+                    "amt": 1824,
+                    "bill": "AB56614",
+                    "party": "ARVIND AGENCY"
+                },
+                {
+                    "balance": 39018.0,
+                    "amt": 39018,
+                    "bill": "AB56612",
+                    "party": "ARVIND AGENCY"
+                },
+                {
+                    "balance": 10305.0,
+                    "amt": 10305,
+                    "bill": "AB56178",
+                    "party": "ARVIND AGENCY"
+                }
+            ],
+            "party": "D-P25102",
+            "bank_entry": null
+        },
+        {
+            "id": 3826,
+            "cheque_date": "2025-11-15",
+            "cheque_no": "166060",
+            "party_name": "GOPI KRISHNA TRADERS",
+            "amt": 50603.0,
+            "bank": "TMB",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 50603.0,
+                    "amt": 50603,
+                    "bill": "AB56353",
+                    "party": "GOPI KRISHNA TRADERS"
+                }
+            ],
+            "party": "P16106",
+            "bank_entry": null
+        },
+        {
+            "id": 3825,
+            "cheque_date": "2025-11-21",
+            "cheque_no": "000689",
+            "party_name": "VASANTHAM MALIGAI-D",
+            "amt": 24175.0,
+            "bank": "KVB 650",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 24175.0,
+                    "amt": 24175,
+                    "bill": "AB55326",
+                    "party": "VASANTHAM MALIGAI-D"
+                }
+            ],
+            "party": "D-P19380",
+            "bank_entry": null
+        },
+        {
+            "id": 3824,
+            "cheque_date": "2025-11-20",
+            "cheque_no": "000688",
+            "party_name": "VASANTHAM MALIGAI-D",
+            "amt": 27230.0,
+            "bank": "KVB 650",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 12623.0,
+                    "amt": 12623,
+                    "bill": "AB55323",
+                    "party": "VASANTHAM MALIGAI-D"
+                },
+                {
+                    "balance": 7354.0,
+                    "amt": 7354,
+                    "bill": "AB55324",
+                    "party": "VASANTHAM MALIGAI-D"
+                },
+                {
+                    "balance": 7253.0,
+                    "amt": 7253,
+                    "bill": "AB55325",
+                    "party": "VASANTHAM MALIGAI-D"
+                }
+            ],
+            "party": "D-P19380",
+            "bank_entry": null
+        },
+        {
+            "id": 3823,
+            "cheque_date": "2025-11-19",
+            "cheque_no": "000687",
+            "party_name": "VASANTHAM MALIGAI-D",
+            "amt": 38521.0,
+            "bank": "SBI",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 38520.0,
+                    "amt": 38521,
+                    "bill": "AB55592",
+                    "party": "VASANTHAM MALIGAI-D"
+                }
+            ],
+            "party": "D-P19380",
+            "bank_entry": null
+        },
+        {
+            "id": 3822,
+            "cheque_date": "2025-11-18",
+            "cheque_no": "000686",
+            "party_name": "VASANTHAM MALIGAI-D",
+            "amt": 25892.0,
+            "bank": "KVB 650",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 19172.0,
+                    "amt": 19172,
+                    "bill": "AB55593",
+                    "party": "VASANTHAM MALIGAI-D"
+                },
+                {
+                    "balance": 6720.0,
+                    "amt": 6720,
+                    "bill": "AB55334",
+                    "party": "VASANTHAM MALIGAI-D"
+                }
+            ],
+            "party": "D-P19380",
+            "bank_entry": null
+        },
+        {
+            "id": 3821,
+            "cheque_date": "2025-11-15",
+            "cheque_no": "000685",
+            "party_name": "VASANTHAM MALIGAI-D",
+            "amt": 22885.0,
+            "bank": "KVB 650",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 16338.0,
+                    "amt": 16338,
+                    "bill": "AB55350",
+                    "party": "VASANTHAM MALIGAI-D"
+                },
+                {
+                    "balance": 6547.0,
+                    "amt": 6547,
+                    "bill": "AB55270",
+                    "party": "VASANTHAM MALIGAI-D"
+                }
+            ],
+            "party": "D-P19380",
+            "bank_entry": null
+        },
+        {
+            "id": 3820,
+            "cheque_date": "2025-11-04",
+            "cheque_no": "001015",
+            "party_name": "M.MUNIYAPILLAI-D 1-D-D",
+            "amt": 3310.0,
+            "bank": "HDFC",
+            "deposit_date": "2025-11-10",
+            "collection": [
+                {
+                    "balance": 3310.0,
+                    "amt": 3310,
+                    "bill": "AB53060",
+                    "party": "M.MUNIYAPILLAI-D 1-D-D"
+                }
+            ],
+            "party": "P15991",
+            "bank_entry": null
+        },
+        {
+            "id": 3819,
+            "cheque_date": "2025-11-12",
+            "cheque_no": "314075",
+            "party_name": "KURINJI PHARMACY-D",
+            "amt": 3408.0,
+            "bank": "CANARA",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 3408.0,
+                    "amt": 3408,
+                    "bill": "AB56336",
+                    "party": "KURINJI PHARMACY-D"
+                }
+            ],
+            "party": "D-P17883",
+            "bank_entry": null
+        },
+        {
+            "id": 3818,
+            "cheque_date": "2025-11-10",
+            "cheque_no": "308725",
+            "party_name": "SRI RAJALAKSHMI STORES-D",
+            "amt": 3280.0,
+            "bank": "CANARA",
+            "deposit_date": "2025-11-10",
+            "collection": [
+                {
+                    "balance": 3280.0,
+                    "amt": 3280,
+                    "bill": "AB54165",
+                    "party": "SRI RAJALAKSHMI STORES-D"
+                }
+            ],
+            "party": "D-P18771",
+            "bank_entry": null
+        },
+        {
+            "id": 3817,
+            "cheque_date": "2025-11-12",
+            "cheque_no": "956163",
+            "party_name": "SARADHA STORE-D-D",
+            "amt": 6740.0,
+            "bank": "INDIAN BANK",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 6742.0,
+                    "amt": 6740,
+                    "bill": "AB54222",
+                    "party": "Meenatchi Store-D"
+                }
+            ],
+            "party": "D-P1466",
+            "bank_entry": null
+        },
+        {
+            "id": 3816,
+            "cheque_date": "2025-11-10",
+            "cheque_no": "003242",
+            "party_name": "SENTHIL MEDICALS-D",
+            "amt": 10652.0,
+            "bank": "KVB 650",
+            "deposit_date": "2025-11-10",
+            "collection": [
+                {
+                    "balance": 5973.0,
+                    "amt": 5973,
+                    "bill": "AB52260",
+                    "party": "SENTHIL MEDICALS-D"
+                },
+                {
+                    "balance": 4679.0,
+                    "amt": 4679,
+                    "bill": "AB54966",
+                    "party": "SENTHIL MEDICALS-D"
+                }
+            ],
+            "party": "P15977",
+            "bank_entry": null
+        },
+        {
+            "id": 3815,
+            "cheque_date": "2025-11-11",
+            "cheque_no": "000988",
+            "party_name": "SRI SENTHIL PHARMACY-D",
+            "amt": 2896.0,
+            "bank": "KVB 650",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 2896.0,
+                    "amt": 2896,
+                    "bill": "AB55727",
+                    "party": "SRI SENTHIL PHARMACY-D"
+                }
+            ],
+            "party": "P15874",
+            "bank_entry": null
+        },
+        {
+            "id": 3814,
+            "cheque_date": "2025-11-08",
+            "cheque_no": "955309",
+            "party_name": "KALYANI  MEDICALS-D-D-D-D",
+            "amt": 1548.0,
+            "bank": "INDIAN BANK",
+            "deposit_date": "2025-11-10",
+            "collection": [
+                {
+                    "balance": 1548.0,
+                    "amt": 1548,
+                    "bill": "AB52802",
+                    "party": "KALYANI  MEDICALS-D-D-D-D"
+                }
+            ],
+            "party": "D-P19576",
+            "bank_entry": null
+        },
+        {
+            "id": 3813,
+            "cheque_date": "2025-11-18",
+            "cheque_no": "015563",
+            "party_name": "FAIR PRICE MART-D",
+            "amt": 7102.0,
+            "bank": "KVB 650",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 6258.0,
+                    "amt": 6258,
+                    "bill": "AB55760",
+                    "party": "FAIR PRICE MART-D"
+                },
+                {
+                    "balance": 844.0,
+                    "amt": 844,
+                    "bill": "AB53929",
+                    "party": "FAIR PRICE MART-D"
+                }
+            ],
+            "party": "P15881",
+            "bank_entry": null
+        },
+        {
+            "id": 3812,
+            "cheque_date": "2025-11-10",
+            "cheque_no": "100440",
+            "party_name": "MAIDEEN MALIGAI-D-D-D-D",
+            "amt": 2980.0,
+            "bank": "CENTRAL BANK",
+            "deposit_date": "2025-11-10",
+            "collection": [
+                {
+                    "balance": 9893.0,
+                    "amt": 2980,
+                    "bill": "AB55861",
+                    "party": "KUMAR BEEDA-D"
+                }
+            ],
+            "party": "D-P2421",
+            "bank_entry": null
+        },
+        {
+            "id": 3811,
+            "cheque_date": "2025-11-10",
+            "cheque_no": "009457",
+            "party_name": "ASVINI MEDICAL-D-D",
+            "amt": 9333.0,
+            "bank": "CUB",
+            "deposit_date": "2025-11-10",
+            "collection": [
+                {
+                    "balance": 9333.0,
+                    "amt": 9333,
+                    "bill": "AB53644",
+                    "party": "ASVINI MEDICAL-D-D"
+                }
+            ],
+            "party": "P16022",
+            "bank_entry": null
+        },
+        {
+            "id": 3810,
+            "cheque_date": "2025-11-10",
+            "cheque_no": "001337",
+            "party_name": "Aadhissh Medicals",
+            "amt": 2389.0,
+            "bank": "ICICI",
+            "deposit_date": "2025-11-10",
+            "collection": [
+                {
+                    "balance": 2389.0,
+                    "amt": 2389,
+                    "bill": "AB55412",
+                    "party": "Aadhissh Medicals"
+                }
+            ],
+            "party": "P15907",
+            "bank_entry": null
+        },
+        {
+            "id": 3809,
+            "cheque_date": "2025-11-10",
+            "cheque_no": "308730",
+            "party_name": "SRI RAJALAKSHMI STORES-D",
+            "amt": 8881.0,
+            "bank": "CANARA",
+            "deposit_date": "2025-11-10",
+            "collection": [
+                {
+                    "balance": 8881.0,
+                    "amt": 8881,
+                    "bill": "AB55346",
+                    "party": "SRI RAJALAKSHMI STORES-D"
+                }
+            ],
+            "party": "D-P18771",
+            "bank_entry": null
+        },
+        {
+            "id": 3808,
+            "cheque_date": "2025-11-12",
+            "cheque_no": "702022",
+            "party_name": "IRAIVAN MEDICALS-D",
+            "amt": 1066.0,
+            "bank": "TMB",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 1066.0,
+                    "amt": 1066,
+                    "bill": "AB53223",
+                    "party": "IRAIVAN MEDICALS-D"
+                }
+            ],
+            "party": "P15980",
+            "bank_entry": null
+        },
+        {
+            "id": 3807,
+            "cheque_date": "2025-11-14",
+            "cheque_no": "015517",
+            "party_name": "FAIR PRICE MART-D",
+            "amt": 27333.0,
+            "bank": "KVB 650",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 27333.0,
+                    "amt": 27333,
+                    "bill": "AB54620",
+                    "party": "FAIR PRICE MART-D"
+                }
+            ],
+            "party": "P15881",
+            "bank_entry": null
+        },
+        {
+            "id": 3806,
+            "cheque_date": "2025-11-11",
+            "cheque_no": "015537",
+            "party_name": "FAIR PRICE MART-D",
+            "amt": 11015.0,
+            "bank": "KVB 650",
+            "deposit_date": null,
+            "collection": [
+                {
+                    "balance": 11015.0,
+                    "amt": 11015,
+                    "bill": "AB55054",
+                    "party": "FAIR PRICE MART-D"
+                }
+            ],
+            "party": "P15881",
+            "bank_entry": null
+        }
+    ]
+}
