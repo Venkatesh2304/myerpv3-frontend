@@ -8,10 +8,12 @@ import {
 } from "@refinedev/core";
 import RestDataProvider from "../rest-data-provider/index";
 import axios from "axios";
+
 const httpClient = axios.create({
-    baseURL: "http://127.0.0.1:8080",
+    baseURL: import.meta.env.VITE_BACKEND_API_URL,
     withCredentials: true
 });
+
 httpClient.interceptors.request.use(
     (config) => {
         const method = config.method?.toUpperCase();
