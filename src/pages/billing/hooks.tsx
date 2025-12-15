@@ -152,7 +152,7 @@ export const useOrdersTable = (billingId: number | null) => {
                 permanent: filters,
             },
             queryOptions: {
-                enabled: !!billingId,
+                enabled: (!!billingId) && filters.length > 0,
             },
             pagination: {
                 mode: "client",
