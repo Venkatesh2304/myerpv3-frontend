@@ -55,8 +55,8 @@ function DesktopHeader() {
       )}
     >
       <CompanyDropdown />
-      {/* <ThemeToggle /> */}
       <UserDropdown />
+      <ThemeToggle />
     </header>
   );
 }

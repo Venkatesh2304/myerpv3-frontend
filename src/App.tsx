@@ -23,7 +23,7 @@ import { BillList } from "@/pages/bill";
 import { BillingList } from "@/pages/billing";
 import { dataProvider } from "./lib/dataprovider";
 import { authProvider } from "./lib/authprovider";
-import { BookOpenTextIcon, LandmarkIcon, PrinterIcon, ScrollTextIcon } from "lucide-react";
+import { BookOpenTextIcon, LandmarkIcon, PrinterIcon, ScrollTextIcon, Building2Icon } from "lucide-react";
 import { Login } from "./pages/login";
 import { CompanyProvider, useCompany } from "./providers/company-provider";
 import { useEffect } from "react";
@@ -78,7 +78,10 @@ function App() {
 
             ]}
             options={{
-              syncWithLocation: true,
+              title: {
+                text: "ERP",
+                icon: <Building2Icon />,
+              },
               disableTelemetry: true,
               warnWhenUnsavedChanges: true,
               projectId: "acm5tN-f22iGa-ckgfSS",
@@ -127,7 +130,7 @@ function App() {
           </Refine>
         </ThemeProvider>
       </RefineKbarProvider>
-    </BrowserRouter>
+    </BrowserRouter >
   );
 }
 

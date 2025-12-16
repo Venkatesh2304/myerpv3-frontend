@@ -287,6 +287,10 @@ export const useBillingProcess = (
                     message: "Failed to start billing",
                     description: response.data.error,
                 });
+                if (response.data?.refresh) {
+                    //This is the case for billing is old
+                    setBillingId(response.data.billing_id);
+                }
             }
         }).catch((err) => {
             console.log(err);

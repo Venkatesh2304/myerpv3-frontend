@@ -20,7 +20,7 @@ export const BillList = () => {
         date: new Date().toISOString().split("T")[0],
         salesman: "all",
         is_printed: "false",
-        beat_type: "all",
+        beat_type: "retail",
     };
 
     const [filters, setFilters] = React.useState<CrudFilters>(() =>
@@ -127,7 +127,7 @@ export const BillList = () => {
             queryOptions: {
                 retry: 1,
                 enabled: permanentFilters?.length > 0
-            }
+            },
         },
     });
 

@@ -352,7 +352,6 @@ export const BankList = () => {
   const table = useTable({
     columns,
     refineCoreProps: {
-      syncWithLocation: true,
       filters: {
         permanent: filters,
       },

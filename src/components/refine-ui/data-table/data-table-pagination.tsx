@@ -36,7 +36,7 @@ export function DataTablePagination({
   total,
 }: DataTablePaginationProps) {
   const pageSizeOptions = useMemo(() => {
-    const baseOptions = [10, 20, 30, 40, 50];
+    const baseOptions = [10, 20, 30, 40, 50, 100, 200, 500];
     const optionsSet = new Set(baseOptions);
 
     if (!optionsSet.has(pageSize)) {

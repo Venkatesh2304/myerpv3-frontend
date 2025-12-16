@@ -78,7 +78,6 @@ export const ChequeList = () => {
   const table = useTable({
     columns,
     refineCoreProps: {
-      syncWithLocation: true,
       filters: {
         permanent: showOnlyDepositable
           ? [
