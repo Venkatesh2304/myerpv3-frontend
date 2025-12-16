@@ -9,23 +9,10 @@ import {
 import RestDataProvider from "../rest-data-provider/index";
 import axios from "axios";
 
-const httpClient = axios.create({
+export const httpClient = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_API_URL,
     withCredentials: true
 });
-
-httpClient.interceptors.request.use(
-    (config) => {
-        const method = config.method?.toUpperCase();
-        const url = `${config.baseURL ?? ""}${config.url ?? ""}`;
-        console.log(`[AXIOS] ${method} ${url}`);
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
 
 type DrfDataProviderConfig = {
     baseUrl?: string;

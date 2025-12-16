@@ -12,6 +12,7 @@ import { PrintAction } from "./components/print-action";
 import type { Bill } from "./types";
 
 import { useCompany } from "@/providers/company-provider";
+import { CaptchaProvider, useCaptcha } from "@/components/custom/CaptchaProvider";
 
 export const BillList = () => {
     const { company } = useCompany();
@@ -21,7 +22,6 @@ export const BillList = () => {
         is_printed: "false",
         beat_type: "all",
     };
-
 
     const [filters, setFilters] = React.useState<CrudFilters>(() =>
         mapFormToFilters(DEFAULT_FILTER_VALUES)
@@ -130,15 +130,18 @@ export const BillList = () => {
             }
         },
     });
+
     return (
-        <ListView>
-            <Card className="mb-2 pt-4 pb-4">
-                <CardContent>
-                    <BillFilters setFilters={setFilters} defaultValues={DEFAULT_FILTER_VALUES} companyId={company?.id} />
-                    <PrintAction table={table} />
-                </CardContent>
-            </Card >
-            <DataTable table={table} />
-        </ListView>
+        <CaptchaProvider>
+            <ListView>
+                <Card className="mb-2 pt-4 pb-4">
+                    <CardContent>
+                        <BillFilters setFilters={setFilters} defaultValues={DEFAULT_FILTER_VALUES} companyId={company?.id} />
+                        <PrintAction table={table} />
+                    </CardContent>
+                </Card >
+                <DataTable table={table} />
+            </ListView>
+        </CaptchaProvider>
     );
 };

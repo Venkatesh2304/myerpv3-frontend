@@ -33,6 +33,8 @@ import { Printer } from "lucide-react";
 import React, { useEffect } from "react";
 import { OutstandingTable } from "./outstanding-table";
 import { useCompany } from "@/providers/company-provider";
+import { useCaptcha } from "@/components/custom/CaptchaProvider";
+import { requestWithCaptcha } from "@/lib/captcha";
 
 const PRINT_TYPE_OPTIONS = [
     { value: "both_copy", label: "Both Copy" },
@@ -53,6 +55,7 @@ export const PrintAction = ({ table }: { table: any }) => {
     const { open } = useNotification();
     const { company } = useCompany();
     const { mutation } = useCustomMutation();
+    const captcha = useCaptcha();
     const isLoading = mutation.isPending;
     // Get selected rows
     const selectedRows = table.reactTable.getSelectedRowModel().rows;
@@ -109,12 +112,15 @@ export const PrintAction = ({ table }: { table: any }) => {
             company: company?.id,
             ...additionalData,
         };
-        return dataProvider
-            .custom({
-                url: `/print_bills/`,
+        return requestWithCaptcha(
+            {
+                url: "/print_bills/",
                 method: "post",
-                payload,
-            })
+                headers: { "Content-Type": "application/json" },
+                data: payload,
+            },
+            captcha
+        )
             .then((res) => {
                 if (res?.data?.filepath) {
                     return dataProvider
