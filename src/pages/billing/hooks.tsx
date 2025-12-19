@@ -1,65 +1,21 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useState, useMemo } from "react";
 import { useTable } from "@refinedev/react-table";
 import { createColumnHelper } from "@tanstack/react-table";
-import { useOne, useNotification, CrudFilter, CrudFilters } from "@refinedev/core";
+import { useNotification } from "@refinedev/core";
 import { dataProvider } from "@/lib/dataprovider";
-import { BillingStats, BillingStatus, Order } from "./types";
+import { Order, BillingResponse } from "./types";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { UseFormReturn } from "react-hook-form";
 import { useCompany } from "@/providers/company-provider";
 
-export const useBillingStats = (billingId: number | null) => {
-    const { query: statsQuery } = useOne<BillingStats>({
-        resource: "billing",
-        id: billingId || undefined,
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Trash2 } from "lucide-react";
 
-        queryOptions: {
-            enabled: !!billingId,
-        },
-    });
-
-    return { stats: statsQuery?.data?.data?.stats };
-}
-
-export const useBillingStatus = (billingId: number | null) => {
-    const [statusData, setStatusData] = useState<BillingStatus[]>([]);
-
-    const updateBillingStatus = (id: number) => (
-        dataProvider.getList({
-            resource: "billing_status",
-            pagination: {
-                mode: "off"
-            },
-            filters: [
-                {
-                    field: "billing",
-                    operator: "eq",
-                    value: id,
-                },
-            ],
-        }).then((res) => {
-            setStatusData(res.data as unknown as BillingStatus[]);
-            return res;
-        })
-    );
-
-    useEffect(() => {
-        if (billingId) {
-            updateBillingStatus(billingId);
-        }
-    }, [billingId]);
-
-    return { statusData, updateBillingStatus };
-};
-
-export const useOrdersTable = (billingId: number | null) => {
-    const [orderType, setOrderType] = useState<"creditlock" | "rejected" | "pending">("creditlock");
+export const useOrdersTable = (data: Order[], onEdit: (orderNo: string) => void, onPartyClick: (partyName: string) => void) => {
+    const [selectedOrders, setSelectedOrders] = useState<Record<string, boolean>>({});
     const [deleteOrders, setDeleteOrders] = useState<Record<string, boolean>>({});
-    const [forceOrders, setForceOrders] = useState<Record<string, boolean>>({});
 
-    const columns = React.useMemo(() => {
+    const columns = useMemo(() => {
         const columnHelper = createColumnHelper<Order>();
         return [
             columnHelper.display({
@@ -70,9 +26,9 @@ export const useOrdersTable = (billingId: number | null) => {
                     return (
                         <Checkbox
                             className="border-gray-500"
-                            checked={forceOrders[row.original.order_no] || false}
+                            checked={selectedOrders[row.original.order_no] || false}
                             onCheckedChange={() => {
-                                setForceOrders((prev) => ({
+                                setSelectedOrders((prev) => ({
                                     ...prev,
                                     [row.original.order_no]: !prev[row.original.order_no],
                                 }));
@@ -81,16 +37,45 @@ export const useOrdersTable = (billingId: number | null) => {
                     );
                 },
             }),
-            columnHelper.accessor("party", { header: "Party", size: 250 }),
+            columnHelper.accessor("party", {
+                header: "Party", size: 250,
+                cell: ({ row }) => (
+                    <div
+                        className="cursor-pointer"
+                        onClick={() => onPartyClick(row.original.party)}
+                    >
+                        {row.original.party}
+                    </div>
+                ),
+            }),
             columnHelper.accessor("lines", { header: "Lines", size: 50 }),
             columnHelper.accessor("bill_value", {
                 header: "Value", size: 100,
-                cell: ({ row }) => `₹${row.original.bill_value.toFixed(0)}`,
+                cell: ({ row }) => (
+                    <div
+                        className="cursor-pointer"
+                        onClick={() => onEdit(row.original.order_no)}
+                    >
+                        ₹{row.original.bill_value.toFixed(0)}
+                    </div>
+                ),
+            }),
+            columnHelper.accessor("allocated_value", {
+                header: "Allocated", size: 100,
+                cell: ({ row }) => (
+                    <div
+                        className="cursor-pointer"
+                        onClick={() => onEdit(row.original.order_no)}
+                    >
+                        ₹{row.original.allocated_value.toFixed(0)}
+                    </div>
+                ),
             }),
             columnHelper.accessor("OS", { header: "OS", size: 200 }),
             columnHelper.accessor("coll", { header: "Coll", size: 100 }),
             columnHelper.accessor("salesman", { header: "Salesman", size: 150 }),
             columnHelper.accessor("beat", { header: "Beat", size: 150 }),
+            columnHelper.accessor("type", { header: "Type", size: 50 }),
             columnHelper.display({
                 id: "delete",
                 header: "",
@@ -115,209 +100,124 @@ export const useOrdersTable = (billingId: number | null) => {
                     );
                 },
             }),
-            columnHelper.accessor("type", { header: "Type", size: 50 }),
             columnHelper.accessor("phone", { header: "Phone", size: 120 }),
+
         ];
-    }, [deleteOrders, forceOrders]);
-
-    const [filters, setFilters] = useState<CrudFilters>([]);
-
-    useEffect(() => {
-        if (billingId) {
-            setFilters([
-                {
-                    field: "billing",
-                    operator: "eq",
-                    value: billingId,
-                },
-                ...(orderType === "creditlock"
-                    ? [
-                        { field: "place_order", operator: "eq" as const, value: true },
-                        { field: "creditlock", operator: "eq" as const, value: true },
-                    ]
-                    : orderType === "rejected"
-                        ? [{ field: "place_order", operator: "eq" as const, value: false }]
-                        : [
-                            { field: "place_order", operator: "eq" as const, value: true },
-                            { field: "creditlock", operator: "eq" as const, value: false },
-                        ])]);
-        }
-    }, [billingId, orderType]);
+    }, [selectedOrders, onEdit, onPartyClick]);
 
     const table = useTable<Order>({
         columns,
+        data,
         refineCoreProps: {
-            resource: "order",
-            filters: {
-                permanent: filters,
-            },
+            resource: "order", // Dummy resource
             queryOptions: {
-                enabled: (!!billingId) && filters.length > 0,
+                enabled: false, // Disable automatic fetching
             },
             pagination: {
-                mode: "client",
-                pageSize: 50,
-            },
+                mode: "off",
+            }
         },
-        enableRowSelection: false
+        enableRowSelection: false, // We handle selection manually
     });
 
-    useEffect(() => {
-        if (table.refineCore.tableQuery?.data) {
-            setDeleteOrders({});
-            setForceOrders((forceOrders) => {
-                return {
-                    // ...forceOrders, //TODO: Disabled for time being
-                    // @ts-ignore
-                    ...Object.fromEntries(table.refineCore.tableQuery?.data?.data?.map((order: Order) => [order.order_no, order.potential_release || false]) || [])
-                }
-            });
-        }
-    }, [table.refineCore.tableQuery.data]);
-
-    return { table, orderType, setOrderType, deleteOrders, forceOrders };
+    return { table, selectedOrders, setSelectedOrders, deleteOrders, setDeleteOrders };
 };
 
-export const useBillingProcess = (
-    form: UseFormReturn<any>,
-    deleteOrders: Record<string, boolean>,
-    forceOrders: Record<string, boolean>,
-    updateBillingStatus: (id: number) => Promise<any>,
-    billingId: number | null,
-    setBillingId: (id: number | null) => void
-) => {
+export const useBillingActions = () => {
     const { open } = useNotification();
     const { company } = useCompany();
+    const [loading, setLoading] = useState(false);
 
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
-    const billingStateRef = useRef({
-        billingId,
-        deleteOrders,
-        forceOrders
-    });
+    const getOrders = async (date: string, lines: number): Promise<BillingResponse | null> => {
+        if (!company?.id) {
+            open?.({
+                type: "error",
+                message: "Company not selected",
+            });
+            return null;
+        }
 
-    // Sync ref with state
-    useEffect(() => {
-        billingStateRef.current = {
-            billingId,
-            deleteOrders,
-            forceOrders
-        };
-    }, [billingId, deleteOrders, forceOrders]);
-
-    // Cleanup interval on unmount
-    useEffect(() => {
-        return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
+        setLoading(true);
+        try {
+            const response = await dataProvider.custom?.({
+                url: "/get_order/",
+                method: "post",
+                payload: {
+                    order_date: date,
+                    lines: lines,
+                    company: company.id,
+                },
+            });
+            setLoading(false);
+            return response?.data as BillingResponse;
+        } catch (error: any) {
+            setLoading(false);
+            // Return the response even on error if it contains stats
+            if (error.response?.data) {
+                return error.response.data as BillingResponse;
             }
-        };
-    }, []);
+            open?.({
+                type: "error",
+                message: "Error fetching orders",
+                description: error.message,
+            });
+            return null;
+        }
+    };
 
-    const pollBillingStatus = (id: number) => {
-        if (!id) return;
-        updateBillingStatus(id).then((res) => {
-            const data = res?.data || [];
-            const allCompleted = data.every((s: BillingStatus) => s.status === 1);
-            const anyFailed = data.some((s: BillingStatus) => s.status === 3);
-            if (allCompleted && data.length > 0) {
-                setBillingId(id);
+    const placeOrder = async (date: string, hash: string, selectedOrders: string[], deleteOrders: string[]): Promise<BillingResponse | null> => {
+        if (!company?.id) {
+            open?.({
+                type: "error",
+                message: "Company not selected",
+            });
+            return null;
+        }
+
+        setLoading(true);
+        try {
+            const response = await dataProvider.custom?.({
+                url: "/post_order/",
+                method: "post",
+                payload: {
+                    order_date: date,
+                    company: company.id,
+                    hash: hash,
+                    order_numbers: selectedOrders,
+                    delete_orders: deleteOrders,
+                },
+            });
+            setLoading(false);
+
+            if (response?.data?.message) {
                 open?.({
                     type: "success",
-                    message: "Billing Process Completed",
-                });
-            }
-            else if (anyFailed) {
-                setBillingId(id);
-                open?.({
-                    type: "error",
-                    message: "Billing Process Failed",
-                });
-            }
-            else {
-                setTimeout(() => pollBillingStatus(id), 5000);
-            }
-        });
-    }
-
-    // Initial Load
-    useEffect(() => {
-        if (!company?.id) return;
-
-        dataProvider.custom?.({
-            url: "/start_billing/",
-            method: "get",
-            query: {
-                company: company.id
-            }
-        }).then((response) => {
-            if (response.data && response.data.billing_id) {
-                setBillingId(response.data.billing_id);
-            }
-        });
-    }, [company?.id]);
-
-    const startBillingProcess = () => {
-        const values = form.getValues();
-        return dataProvider.custom?.({
-            url: "/start_billing/",
-            method: "post",
-            payload: {
-                max_lines: values.lines,
-                order_date: values.date,
-                time_interval: values.interval,
-                force_place: billingStateRef.current.forceOrders,
-                delete: billingStateRef.current.deleteOrders,
-                billing_id: billingStateRef.current.billingId,
-                company: company?.id
-            },
-        }).then((response) => {
-            if (response.data.message) {
-                const new_billing_id = response.data.billing_id;
-                if (new_billing_id) {
-                    pollBillingStatus(new_billing_id);
-                }
-                open?.({
-                    type: "success",
-                    message: response.data.message,
+                    message: "Order placed successfully",
+                    description: response.data.message,
                 });
             } else {
                 open?.({
                     type: "error",
-                    message: "Failed to start billing",
-                    description: response.data.error,
+                    message: "Failed to place order",
+                    description: response?.data?.error || "Unknown error",
                 });
-                if (response.data?.refresh) {
-                    //This is the case for billing is old
-                    setBillingId(response.data.billing_id);
-                }
             }
-        }).catch((err) => {
-            console.log(err);
+            return response?.data as BillingResponse;
+
+        } catch (error: any) {
+            setLoading(false);
             open?.({
                 type: "error",
-                message: "Error starting billing",
-                description: err.message,
+                message: "Error placing order",
+                description: `Status: ${error.statusCode} - ${error.message}`,
             });
-        });
-    };
-
-    const handleStart = () => {
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-        }
-
-        // Run immediately
-        startBillingProcess();
-
-        const values = form.getValues();
-        if (values.interval && values.interval > 0) {
-            intervalRef.current = setInterval(() => {
-                startBillingProcess();
-            }, values.interval * 60 * 1000);
+            // Return the response even on error if it contains stats
+            if (error.response?.data) {
+                return error.response.data as BillingResponse;
+            }
+            return null;
         }
     };
 
-    return { billingId, handleStart };
+    return { getOrders, placeOrder, loading };
 };
