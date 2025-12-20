@@ -24,7 +24,7 @@ git add .
 git commit -m "Build frontend"
 
 echo "==> Pushing to remote"
-git push origin main -f
+git push origin -f
 
 echo "==> SSH to server"
 ssh -i "$SSH_KEY" "$REMOTE_HOST" bash -l << EOF
