@@ -206,14 +206,14 @@ export const useBillingActions = () => {
             return response?.data as BillingResponse;
         } catch (error: any) {
             // Return the response even on error if it contains stats
-            if (error.response?.data) {
-                return error.response.data as BillingResponse;
-            }
             open?.({
                 type: "error",
                 message: "Error fetching orders",
-                description: error.message,
+                description: error.response?.data?.error,
             });
+            if (error.response?.data) {
+                return error.response.data as BillingResponse;
+            }
             return null;
         }
     };
@@ -240,26 +240,19 @@ export const useBillingActions = () => {
                 },
             });
 
-            if (response?.data?.message) {
-                open?.({
-                    type: "success",
-                    message: "Order placed successfully",
-                    description: response.data.message,
-                });
-            } else {
-                open?.({
-                    type: "error",
-                    message: "Failed to place order",
-                    description: response?.data?.error || "Unknown error",
-                });
-            }
+            open?.({
+                type: "success",
+                message: "Order placed successfully",
+                description: response.data.message,
+            });
+
             return response?.data as BillingResponse;
 
         } catch (error: any) {
             open?.({
                 type: "error",
                 message: "Error placing order",
-                description: `Status: ${error.statusCode} - ${error.message}`,
+                description: `Status: ${error.response?.status} - ${error.response?.data?.error}`,
             });
             // Return the response even on error if it contains stats
             if (error.response?.data) {

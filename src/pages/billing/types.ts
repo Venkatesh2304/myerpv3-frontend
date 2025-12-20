@@ -48,8 +48,13 @@ export interface BillingResponse {
 export interface PartyCredibilityResponse {
     avg_days: number;
     avg_value: number;
-    days: number[];
-    values: number[];
+    avg_monthly: number;
+    bills: {
+        name: string;
+        days: number | null;
+        amt: number;
+        collected: boolean;
+    }[];
 }
 
 export interface PartyCreditResponse {

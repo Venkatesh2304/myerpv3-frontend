@@ -31,7 +31,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Legend, Cell } from 'recharts';
 import { PartyCredibilityResponse, PartyCreditResponse } from "./types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -404,8 +404,27 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId,
     const [loading, setLoading] = React.useState(false);
     const [data, setData] = React.useState<PartyCredibilityResponse | null>(null);
     const [creditData, setCreditData] = React.useState<PartyCreditResponse | null>(null);
-    const [graphType, setGraphType] = React.useState<'days' | 'values'>('days');
     const [savingCredit, setSavingCredit] = React.useState(false);
+    const [limit, setLimit] = React.useState(50);
+    const [statusFilter, setStatusFilter] = React.useState<'all' | 'pending' | 'settled'>('settled');
+    const [minBillValue, setMinBillValue] = React.useState(0);
+
+    const filteredBills = React.useMemo(() => {
+        if (!data?.bills) return [];
+        let bills = data.bills;
+
+        if (statusFilter === 'pending') {
+            bills = bills.filter(b => !b.collected);
+        } else if (statusFilter === 'settled') {
+            bills = bills.filter(b => b.collected);
+        }
+
+        if (minBillValue > 0) {
+            bills = bills.filter(b => b.amt > minBillValue);
+        }
+
+        return bills.slice(-limit);
+    }, [data, statusFilter, minBillValue, limit]);
 
     React.useEffect(() => {
         if (open && partyId && company?.id) {
@@ -496,7 +515,7 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId,
                     <div className="flex justify-center p-8">Loading...</div>
                 ) : data ? (
                     <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                             <div className="p-4 bg-muted rounded-md text-center">
                                 <div className="text-sm text-muted-foreground">Average Bill Days</div>
                                 <div className="text-2xl font-bold">{data.avg_days.toFixed(0)}</div>
@@ -505,35 +524,64 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId,
                                 <div className="text-sm text-muted-foreground">Average Bill Value</div>
                                 <div className="text-2xl font-bold">₹{data.avg_value.toFixed(0)}</div>
                             </div>
+                            <div className="p-4 bg-muted rounded-md text-center">
+                                <div className="text-sm text-muted-foreground">Average Month Turnover</div>
+                                <div className="text-2xl font-bold">₹{data.avg_monthly.toFixed(0)}</div>
+                            </div>
                         </div>
 
                         <div className="space-y-4">
-                            <div className="flex justify-end">
-                                <Select value={graphType} onValueChange={(val: 'days' | 'values') => setGraphType(val)}>
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Select Graph" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="days">Bill Days</SelectItem>
-                                        <SelectItem value="values">Bill Values</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <div className="flex justify-end items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <Label>Status</Label>
+                                    <Select value={statusFilter} onValueChange={(val: any) => setStatusFilter(val)}>
+                                        <SelectTrigger className="w-[120px]">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All</SelectItem>
+                                            <SelectItem value="pending">Pending</SelectItem>
+                                            <SelectItem value="settled">Settled</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Label>Min Value</Label>
+                                    <Input
+                                        type="number"
+                                        value={minBillValue || ""}
+                                        onChange={(e) => setMinBillValue(Number(e.target.value))}
+                                        className="w-24"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Label>Limit</Label>
+                                    <Input
+                                        type="number"
+                                        value={limit || ""}
+                                        onChange={(e) => setLimit(Number(e.target.value))}
+                                        className="w-20"
+                                    />
+                                </div>
                             </div>
-
-                            <div className="h-[200px] w-full">
+                            <div className="h-[300px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart
-                                        data={(graphType === 'days' ? data.days : data.values).map((val, index) => ({
-                                            name: index + 1,
-                                            value: val
-                                        }))}
+                                    <ComposedChart
+                                        data={filteredBills}
+                                        margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                                     >
                                         <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="name" />
-                                        <YAxis />
+                                        <YAxis yAxisId="left" orientation="left" stroke="#8884d8" domain={[0, 'auto']} />
+                                        <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" domain={[0, 'auto']} />
                                         <Tooltip />
-                                        <Bar dataKey="value" fill="#3b82f6" />
-                                    </BarChart>
+                                        <Legend />
+                                        <Bar yAxisId="left" dataKey="amt" name="Amount">
+                                            {filteredBills.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.collected ? "#22c55e" : "#ef4444"} />
+                                            ))}
+                                        </Bar>
+                                        <Line yAxisId="right" type="monotone" dataKey="days" stroke="#82ca9d" name="Days" connectNulls={false} />
+                                    </ComposedChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
