@@ -168,12 +168,15 @@ interface OrdersListProps {
     category: 'normal' | 'partial' | 'less_than_config';
     setCategory: (category: 'normal' | 'partial' | 'less_than_config') => void;
     selectedCount: number;
+    lastTime?: string;
+    todayBillsCount?: number;
+    todayBills?: string;
 }
 
-export const OrdersList: React.FC<OrdersListProps> = ({ table, category, setCategory, selectedCount }) => {
+export const OrdersList: React.FC<OrdersListProps> = ({ table, category, setCategory, selectedCount, lastTime, todayBillsCount, todayBills }) => {
     return (
         <div className="mt-4 space-y-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between gap-4">
                 <Select value={category} onValueChange={(val: any) => setCategory(val)}>
                     <SelectTrigger className="w-[200px]">
                         <SelectValue placeholder="Select category" />
@@ -184,11 +187,17 @@ export const OrdersList: React.FC<OrdersListProps> = ({ table, category, setCate
                         <SelectItem value="less_than_config">Less Than Config Value</SelectItem>
                     </SelectContent>
                 </Select>
+
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    {lastTime && <div>Last Time: <span className="font-medium text-foreground">{lastTime}</span></div>}
+                    {todayBillsCount !== undefined && <div>Today Bills: <span className="font-medium text-foreground">{todayBillsCount}</span></div>}
+                    {todayBills && <div>Bills: <span className="font-medium text-foreground">{todayBills}</span></div>}
+                </div>
             </div>
             <div className="border rounded-md">
                 <DataTable table={table} />
             </div>
-        </div>
+        </div >
     );
 };
 
@@ -347,10 +356,9 @@ interface BillingStatsDialogProps {
     stats: ProcessStats | undefined;
     lastBillsCount?: number;
     lastBills?: string;
-    lastTime?: string;
 }
 
-export const BillingStatsDialog: React.FC<BillingStatsDialogProps> = ({ open, onOpenChange, stats, lastBillsCount, lastBills, lastTime }) => {
+export const BillingStatsDialog: React.FC<BillingStatsDialogProps> = ({ open, onOpenChange, stats, lastBillsCount, lastBills }) => {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
@@ -360,7 +368,6 @@ export const BillingStatsDialog: React.FC<BillingStatsDialogProps> = ({ open, on
                 <div className="grid gap-4 py-4">
                     {(
                         <div className="mb-4 p-4 bg-muted rounded-md">
-                            {lastTime && <div className="text-sm ">Last Time: {lastTime}</div>}
                             {lastBillsCount && <div className="text-sm ">Last Bills Count: {lastBillsCount}</div>}
                             {lastBills && <div className="font-semibold">{lastBills}</div>}
                         </div>

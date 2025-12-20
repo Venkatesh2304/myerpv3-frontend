@@ -39,6 +39,8 @@ export interface BillingResponse {
     last_bills_count?: number;
     last_bills?: string;
     last_time?: string;
+    today_bills_count?: number;
+    today_bills?: string;
     message?: string;
     error?: string;
 }

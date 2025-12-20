@@ -16,6 +16,8 @@ export const BillingList = () => {
     const [lastBillsCount, setLastBillsCount] = useState<number | undefined>(undefined);
     const [lastBills, setLastBills] = useState<string | undefined>(undefined);
     const [lastTime, setLastTime] = useState<string | undefined>(undefined);
+    const [todayBillsCount, setTodayBillsCount] = useState<number | undefined>(undefined);
+    const [todayBills, setTodayBills] = useState<string | undefined>(undefined);
 
     // Edit Dialog State
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -59,8 +61,6 @@ export const BillingList = () => {
             if (result.process) {
                 setCurrentStats(result.process);
                 setLastTime(result.last_time);
-                setLastBillsCount(undefined);
-                setLastBills(undefined);
                 // If there is an error or if any process failed (value -1), open dialog
                 const hasFailure = Object.values(result.process).some(val => val === -1);
                 if (result.error || hasFailure) {
@@ -91,6 +91,8 @@ export const BillingList = () => {
                 setLastBillsCount(result.last_bills_count);
                 setLastBills(result.last_bills);
                 setLastTime(result.last_time);
+                setTodayBillsCount(result.today_bills_count);
+                setTodayBills(result.today_bills);
                 setStatsOpen(true);
             }
 
@@ -110,9 +112,6 @@ export const BillingList = () => {
         setStep('input');
         setSelectedOrders({});
         setCurrentStats(undefined);
-        setLastBillsCount(undefined);
-        setLastBills(undefined);
-        setLastTime(undefined);
     }
 
     const handleOrderUpdate = (orderNo: string, newAllocatedValue: number) => {
@@ -134,12 +133,15 @@ export const BillingList = () => {
                 onCreditLock={() => setCreditLockDialogOpen(true)}
                 step={step}
             />
-            {step === 'review' && (
+            {(
                 <OrdersList
                     table={table}
                     category={category}
                     setCategory={setCategory}
                     selectedCount={selectedCount}
+                    lastTime={lastTime}
+                    todayBillsCount={todayBillsCount}
+                    todayBills={todayBills}
                 />
             )}
             <BillingStatsDialog
@@ -148,7 +150,6 @@ export const BillingList = () => {
                 stats={currentStats}
                 lastBillsCount={lastBillsCount}
                 lastBills={lastBills}
-                lastTime={lastTime}
             />
             <OrderEditDialog
                 open={editDialogOpen}
