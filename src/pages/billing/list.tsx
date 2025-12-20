@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
-import { BillingControls, OrdersList, BillingStatsDialog, OrderEditDialog, PartyDetailsDialog } from "./components";
+import { BillingControls, OrdersList, BillingStatsDialog, OrderEditDialog, PartyDetailsDialog, CreditLockDialog } from "./components";
 import { useOrdersTable, useBillingActions } from "./hooks";
 import { Order, ProcessStats } from "./types";
 
@@ -23,7 +23,8 @@ export const BillingList = () => {
 
     // Party Dialog State
     const [partyDialogOpen, setPartyDialogOpen] = useState(false);
-    const [selectedParty, setSelectedParty] = useState<string | null>(null);
+    const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
+    const [creditLockDialogOpen, setCreditLockDialogOpen] = useState(false);
 
     const form = useForm({
         defaultValues: {
@@ -36,11 +37,11 @@ export const BillingList = () => {
         return orders.filter(order => (order.order_category || 'normal') === category);
     }, [orders, category]);
 
-    const { table, selectedOrders, setSelectedOrders, deleteOrders, setDeleteOrders } = useOrdersTable(filteredOrders, (orderNo) => {
+    const { table, selectedOrders, setSelectedOrders, deleteOrders, setDeleteOrders, WarningDialog } = useOrdersTable(filteredOrders, (orderNo) => {
         setEditingOrderNo(orderNo);
         setEditDialogOpen(true);
-    }, (partyName) => {
-        setSelectedParty(partyName);
+    }, (partyId) => {
+        setSelectedPartyId(partyId);
         setPartyDialogOpen(true);
     });
 
@@ -48,7 +49,7 @@ export const BillingList = () => {
         return filteredOrders.filter(order => selectedOrders[order.order_no]).length;
     }, [filteredOrders, selectedOrders]);
 
-    const { getOrders, placeOrder, loading } = useBillingActions();
+    const { getOrders, placeOrder } = useBillingActions();
 
     const handleGetOrders = async () => {
         const values = form.getValues();
@@ -130,7 +131,7 @@ export const BillingList = () => {
                 onPlaceOrder={handlePlaceOrder}
                 onCancel={handleReset}
                 onShowStats={() => setStatsOpen(true)}
-                loading={loading}
+                onCreditLock={() => setCreditLockDialogOpen(true)}
                 step={step}
             />
             {step === 'review' && (
@@ -155,10 +156,20 @@ export const BillingList = () => {
                 orderNo={editingOrderNo}
                 onOrderUpdate={handleOrderUpdate}
             />
+            <WarningDialog />
             <PartyDetailsDialog
                 open={partyDialogOpen}
                 onOpenChange={setPartyDialogOpen}
-                partyName={selectedParty}
+                partyId={selectedPartyId}
+            />
+
+            <CreditLockDialog
+                open={creditLockDialogOpen}
+                onOpenChange={setCreditLockDialogOpen}
+                onPartySelect={(partyId) => {
+                    setSelectedPartyId(partyId);
+                    setPartyDialogOpen(true);
+                }}
             />
         </div>
     );

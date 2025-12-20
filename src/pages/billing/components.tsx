@@ -1,8 +1,6 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { LoadingButton } from "@/components/ui/loading-button";
 import { DatePicker } from "@/components/custom/date-picker";
 import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import {
@@ -34,7 +32,11 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { PartyCredibilityResponse } from "./types";
+import { PartyCredibilityResponse, PartyCreditResponse } from "./types";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { ResourceCombobox } from "@/components/custom/resource-combobox";
 
 interface BillingControlsProps {
     form: UseFormReturn<any>;
@@ -42,11 +44,11 @@ interface BillingControlsProps {
     onPlaceOrder: () => void;
     onCancel: () => void;
     onShowStats: () => void;
-    loading: boolean;
+    onCreditLock: () => void;
     step: 'input' | 'review';
 }
 
-export const BillingControls: React.FC<BillingControlsProps> = ({ form, onGetOrders, onPlaceOrder, onCancel, onShowStats, loading, step }) => {
+export const BillingControls: React.FC<BillingControlsProps> = ({ form, onGetOrders, onPlaceOrder, onCancel, onShowStats, onCreditLock, step }) => {
     return (
         <div className="w-full">
             <Form {...form}>
@@ -80,7 +82,6 @@ export const BillingControls: React.FC<BillingControlsProps> = ({ form, onGetOrd
                     {step === 'input' ? (
                         <LoadingButton
                             onClick={onGetOrders}
-                            loading={loading}
                             className="bg-blue-600 hover:bg-blue-700"
                         >
                             GET ORDERS
@@ -90,27 +91,75 @@ export const BillingControls: React.FC<BillingControlsProps> = ({ form, onGetOrd
                             <LoadingButton
                                 onClick={onCancel}
                                 variant="outline"
-                                disabled={loading}
                             >
                                 CANCEL
                             </LoadingButton>
                             <LoadingButton
                                 onClick={onPlaceOrder}
-                                loading={loading}
                                 className="bg-green-600 hover:bg-green-700"
                             >
                                 PLACE ORDER
                             </LoadingButton>
                         </div>
                     )}
-                    <div className="flex-1 flex justify-end">
+                    <div className="flex-1 flex justify-end gap-2">
                         <Button variant="secondary" onClick={onShowStats}>
                             Show Stats
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={onCreditLock}
+                            className="border-orange-500 text-orange-500 hover:bg-orange-50"
+                        >
+                            Credit Lock
                         </Button>
                     </div>
                 </div>
             </Form>
         </div>
+    );
+};
+
+interface CreditLockDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onPartySelect: (partyId: string) => void;
+}
+
+export const CreditLockDialog: React.FC<CreditLockDialogProps> = ({ open, onOpenChange, onPartySelect }) => {
+    const [selectedParty, setSelectedParty] = React.useState<any>(null);
+
+    const handleSelect = (value: any) => {
+        if (value) {
+            onPartySelect(value);
+            onOpenChange(false);
+            setSelectedParty(null);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Select Party for Credit Lock</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                    <Label className="mb-2 block">Party</Label>
+                    <ResourceCombobox
+                        resource="party"
+                        value={selectedParty}
+                        onValueChange={(val) => handleSelect(val)}
+                        placeholder="Select party..."
+                        minSearchLength={3}
+                        labelKey="label"
+                        valueKey="value"
+                        filters={
+                            [{ field: 'company', operator: 'eq', value: 'devaki_hul' }]
+                        }
+                    />
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 
@@ -135,9 +184,6 @@ export const OrdersList: React.FC<OrdersListProps> = ({ table, category, setCate
                         <SelectItem value="less_than_config">Less Than Config Value</SelectItem>
                     </SelectContent>
                 </Select>
-                {/* <div className="text-sm font-medium">
-                    {selectedCount} selected / {table.options.data.length} total
-                </div> */}
             </div>
             <div className="border rounded-md">
                 <DataTable table={table} />
@@ -340,23 +386,72 @@ export const BillingStatsDialog: React.FC<BillingStatsDialogProps> = ({ open, on
 };
 
 interface PartyDetailsDialogProps {
-    partyName: string | null;
+    partyId: string | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
-export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyName, open, onOpenChange }) => {
+export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId, open, onOpenChange }) => {
     const { company } = useCompany();
     const { open: notify } = useNotification();
     const [loading, setLoading] = React.useState(false);
     const [data, setData] = React.useState<PartyCredibilityResponse | null>(null);
+    const [creditData, setCreditData] = React.useState<PartyCreditResponse | null>(null);
     const [graphType, setGraphType] = React.useState<'days' | 'values'>('days');
+    const [savingCredit, setSavingCredit] = React.useState(false);
 
     React.useEffect(() => {
-        if (open && partyName && company?.id) {
+        if (open && partyId && company?.id) {
             fetchPartyDetails();
+            fetchCreditDetails();
         }
-    }, [open, partyName, company?.id]);
+    }, [open, partyId, company?.id]);
+
+    const fetchCreditDetails = async () => {
+        try {
+            const response = await dataProvider.custom?.({
+                url: `/party_credit/`,
+                method: "get",
+                query: {
+                    company: company?.id,
+                    party_id: partyId,
+                },
+            });
+            if (response?.data) {
+                setCreditData(response.data);
+            }
+        } catch (error) {
+            console.error("Error fetching credit details", error);
+        }
+    };
+
+    const handleSaveCredit = async () => {
+        if (!creditData || !company?.id || !partyId) return;
+        setSavingCredit(true);
+        try {
+            await dataProvider.custom?.({
+                url: `/party_credit/`,
+                method: "post",
+                payload: {
+                    company: company.id,
+                    party_id: partyId,
+                    ...creditData,
+                },
+            });
+            notify?.({
+                type: "success",
+                message: "Credit options updated successfully",
+            });
+        } catch (error: any) {
+            notify?.({
+                type: "error",
+                message: "Error updating credit options",
+                description: error.message,
+            });
+        } finally {
+            setSavingCredit(false);
+        }
+    };
 
     const fetchPartyDetails = async () => {
         setLoading(true);
@@ -366,7 +461,7 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyNam
                 method: "get",
                 query: {
                     company: company?.id,
-                    party_name: partyName,
+                    party_id: partyId,
                 },
             });
             if (response?.data) {
@@ -387,7 +482,7 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyNam
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="min-w-[60vw] max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Party Details: {partyName}</DialogTitle>
+                    <DialogTitle>Party Details: {partyId}</DialogTitle>
                 </DialogHeader>
 
                 {loading ? (
@@ -435,6 +530,48 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyNam
                                 </ResponsiveContainer>
                             </div>
                         </div>
+
+                        {/* Credit Options */}
+                        {creditData && (
+                            <div className="border rounded-md p-4 space-y-4">
+                                <h3 className="font-semibold">Credit Options</h3>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Bills</Label>
+                                        <Input
+                                            type="number"
+                                            value={creditData.bills || ""}
+                                            onChange={(e) => setCreditData({ ...creditData, bills: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Days</Label>
+                                        <Input
+                                            type="number"
+                                            value={creditData.days || ""}
+                                            onChange={(e) => setCreditData({ ...creditData, days: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Value</Label>
+                                        <Input
+                                            type="number"
+                                            value={creditData.value || ""}
+                                            onChange={(e) => setCreditData({ ...creditData, value: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex justify-end">
+                                    <LoadingButton
+                                        onClick={handleSaveCredit}
+                                        loading={savingCredit}
+                                        className="bg-blue-600 hover:bg-blue-700"
+                                    >
+                                        Save Credit Options
+                                    </LoadingButton>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className="text-center p-8 text-muted-foreground">No data available</div>

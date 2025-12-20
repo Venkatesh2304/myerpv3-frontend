@@ -10,10 +10,49 @@ import { useCompany } from "@/providers/company-provider";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Trash2 } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-export const useOrdersTable = (data: Order[], onEdit: (orderNo: string) => void, onPartyClick: (partyName: string) => void) => {
+export const useOrdersTable = (data: Order[], onEdit: (orderNo: string) => void, onPartyClick: (partyId: string) => void) => {
     const [selectedOrders, setSelectedOrders] = useState<Record<string, boolean>>({});
     const [deleteOrders, setDeleteOrders] = useState<Record<string, boolean>>({});
+
+    // Warning Dialog State
+    const [warningDialogOpen, setWarningDialogOpen] = useState(false);
+    const [warningMessage, setWarningMessage] = useState("");
+    const [pendingOrderNo, setPendingOrderNo] = useState<string | null>(null);
+
+    const handleSelectionChange = (orderNo: string, currentChecked: boolean, warning?: string) => {
+        if (!currentChecked && warning) {
+            setWarningMessage(warning);
+            setPendingOrderNo(orderNo);
+            setWarningDialogOpen(true);
+        } else {
+            setSelectedOrders((prev) => ({
+                ...prev,
+                [orderNo]: !prev[orderNo],
+            }));
+        }
+    };
+
+    const confirmSelection = () => {
+        if (pendingOrderNo) {
+            setSelectedOrders((prev) => ({
+                ...prev,
+                [pendingOrderNo]: true,
+            }));
+            setPendingOrderNo(null);
+            setWarningDialogOpen(false);
+        }
+    };
 
     const columns = useMemo(() => {
         const columnHelper = createColumnHelper<Order>();
@@ -28,10 +67,11 @@ export const useOrdersTable = (data: Order[], onEdit: (orderNo: string) => void,
                             className="border-gray-500"
                             checked={selectedOrders[row.original.order_no] || false}
                             onCheckedChange={() => {
-                                setSelectedOrders((prev) => ({
-                                    ...prev,
-                                    [row.original.order_no]: !prev[row.original.order_no],
-                                }));
+                                handleSelectionChange(
+                                    row.original.order_no,
+                                    selectedOrders[row.original.order_no] || false,
+                                    row.original.warning
+                                );
                             }}
                         />
                     );
@@ -42,7 +82,7 @@ export const useOrdersTable = (data: Order[], onEdit: (orderNo: string) => void,
                 cell: ({ row }) => (
                     <div
                         className="cursor-pointer"
-                        onClick={() => onPartyClick(row.original.party)}
+                        onClick={() => onPartyClick(row.original.party_id)}
                     >
                         {row.original.party}
                     </div>
@@ -120,13 +160,29 @@ export const useOrdersTable = (data: Order[], onEdit: (orderNo: string) => void,
         enableRowSelection: false, // We handle selection manually
     });
 
-    return { table, selectedOrders, setSelectedOrders, deleteOrders, setDeleteOrders };
+    const WarningDialog = () => (
+        <AlertDialog open={warningDialogOpen} onOpenChange={setWarningDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Warning</AlertDialogTitle>
+                    <AlertDialogDescription style={{ whiteSpace: 'pre-wrap' }}>
+                        {warningMessage}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setPendingOrderNo(null)}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmSelection}>Confirm</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog >
+    );
+
+    return { table, selectedOrders, setSelectedOrders, deleteOrders, setDeleteOrders, WarningDialog };
 };
 
 export const useBillingActions = () => {
     const { open } = useNotification();
     const { company } = useCompany();
-    const [loading, setLoading] = useState(false);
 
     const getOrders = async (date: string, lines: number): Promise<BillingResponse | null> => {
         if (!company?.id) {
@@ -137,7 +193,6 @@ export const useBillingActions = () => {
             return null;
         }
 
-        setLoading(true);
         try {
             const response = await dataProvider.custom?.({
                 url: "/get_order/",
@@ -148,10 +203,8 @@ export const useBillingActions = () => {
                     company: company.id,
                 },
             });
-            setLoading(false);
             return response?.data as BillingResponse;
         } catch (error: any) {
-            setLoading(false);
             // Return the response even on error if it contains stats
             if (error.response?.data) {
                 return error.response.data as BillingResponse;
@@ -174,7 +227,6 @@ export const useBillingActions = () => {
             return null;
         }
 
-        setLoading(true);
         try {
             const response = await dataProvider.custom?.({
                 url: "/post_order/",
@@ -187,7 +239,6 @@ export const useBillingActions = () => {
                     delete_orders: deleteOrders,
                 },
             });
-            setLoading(false);
 
             if (response?.data?.message) {
                 open?.({
@@ -205,7 +256,6 @@ export const useBillingActions = () => {
             return response?.data as BillingResponse;
 
         } catch (error: any) {
-            setLoading(false);
             open?.({
                 type: "error",
                 message: "Error placing order",
@@ -219,5 +269,5 @@ export const useBillingActions = () => {
         }
     };
 
-    return { getOrders, placeOrder, loading };
+    return { getOrders, placeOrder };
 };

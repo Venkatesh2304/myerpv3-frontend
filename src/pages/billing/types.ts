@@ -1,6 +1,7 @@
 export interface Order {
     order_no: string;
     party: string;
+    party_id: number;
     lines: number;
     bill_value: number;
     allocated_value: number;
@@ -13,6 +14,7 @@ export interface Order {
     cheque: string;
     allow_order: boolean;
     order_category: 'normal' | 'partial' | 'less_than_config';
+    warning?: string;
 }
 
 export interface OrderProduct {
@@ -46,4 +48,10 @@ export interface PartyCredibilityResponse {
     avg_value: number;
     days: number[];
     values: number[];
+}
+
+export interface PartyCreditResponse {
+    bills: number;
+    days: number;
+    value: number;
 }
