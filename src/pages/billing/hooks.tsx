@@ -21,7 +21,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export const useOrdersTable = (data: Order[], onEdit: (orderNo: string) => void, onPartyClick: (partyId: string) => void) => {
+export const useOrdersTable = (data: Order[], onEdit: (orderNo: string) => void, onPartyClick: (partyId: string, beat: string) => void) => {
     const [selectedOrders, setSelectedOrders] = useState<Record<string, boolean>>({});
     const [deleteOrders, setDeleteOrders] = useState<Record<string, boolean>>({});
 
@@ -82,7 +82,7 @@ export const useOrdersTable = (data: Order[], onEdit: (orderNo: string) => void,
                 cell: ({ row }) => (
                     <div
                         className="cursor-pointer"
-                        onClick={() => onPartyClick(row.original.party_id)}
+                        onClick={() => onPartyClick(String(row.original.party_id), row.original.beat)}
                     >
                         {row.original.party}
                     </div>

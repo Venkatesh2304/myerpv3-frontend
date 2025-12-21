@@ -2,7 +2,9 @@ import React, { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { BillingControls, OrdersList, BillingStatsDialog, OrderEditDialog, PartyDetailsDialog, CreditLockDialog } from "./components";
 import { useOrdersTable, useBillingActions } from "./hooks";
-import { Order, ProcessStats } from "./types";
+import { Order, BillingStats, ProcessStats } from "./types";
+import { useCustom } from "@refinedev/core";
+import { useCompany } from "@/providers/company-provider";
 
 export const BillingList = () => {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -12,12 +14,22 @@ export const BillingList = () => {
 
     // Stats Dialog State
     const [statsOpen, setStatsOpen] = useState(false);
-    const [currentStats, setCurrentStats] = useState<ProcessStats | undefined>(undefined);
-    const [lastBillsCount, setLastBillsCount] = useState<number | undefined>(undefined);
-    const [lastBills, setLastBills] = useState<string | undefined>(undefined);
-    const [lastTime, setLastTime] = useState<string | undefined>(undefined);
-    const [todayBillsCount, setTodayBillsCount] = useState<number | undefined>(undefined);
-    const [todayBills, setTodayBills] = useState<string | undefined>(undefined);
+    const [processStats, setProcessStats] = useState<ProcessStats | undefined>(undefined);
+    const { company } = useCompany();
+
+    const { result: { data: statsData }, query: { refetch: statsRefetch } } = useCustom<BillingStats>({
+        url: '/get_billing_stats',
+        method: 'get',
+        config: {
+            query: { company: company?.id },
+        },
+        queryOptions: {
+            enabled: !!company?.id,
+            refetchInterval: 60 * 1000,
+        }
+    });
+
+    const stats = statsData || {};
 
     // Edit Dialog State
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -26,6 +38,7 @@ export const BillingList = () => {
     // Party Dialog State
     const [partyDialogOpen, setPartyDialogOpen] = useState(false);
     const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
+    const [selectedPartyBeat, setSelectedPartyBeat] = useState<string>("");
     const [creditLockDialogOpen, setCreditLockDialogOpen] = useState(false);
 
     const form = useForm({
@@ -42,8 +55,9 @@ export const BillingList = () => {
     const { table, selectedOrders, setSelectedOrders, deleteOrders, setDeleteOrders, WarningDialog } = useOrdersTable(filteredOrders, (orderNo) => {
         setEditingOrderNo(orderNo);
         setEditDialogOpen(true);
-    }, (partyId) => {
+    }, (partyId, beat) => {
         setSelectedPartyId(partyId);
+        setSelectedPartyBeat(beat);
         setPartyDialogOpen(true);
     });
 
@@ -56,16 +70,9 @@ export const BillingList = () => {
     const handleGetOrders = async () => {
         const values = form.getValues();
         const result = await getOrders(values.date, values.lines);
-
         if (result) {
             if (result.process) {
-                setCurrentStats(result.process);
-                setLastTime(result.last_time);
-                // If there is an error or if any process failed (value -1), open dialog
-                const hasFailure = Object.values(result.process).some(val => val === -1);
-                if (result.error || hasFailure) {
-                    setStatsOpen(true);
-                }
+                setProcessStats(result.process);
             }
 
             if (result.orders) {
@@ -87,13 +94,8 @@ export const BillingList = () => {
 
         if (result) {
             if (result.process) {
-                setCurrentStats(result.process);
-                setLastBillsCount(result.last_bills_count);
-                setLastBills(result.last_bills);
-                setLastTime(result.last_time);
-                setTodayBillsCount(result.today_bills_count);
-                setTodayBills(result.today_bills);
-                setStatsOpen(true);
+                setProcessStats(result.process);
+                statsRefetch();
             }
 
             if (result.message) {
@@ -111,7 +113,7 @@ export const BillingList = () => {
         setHash("");
         setStep('input');
         setSelectedOrders({});
-        setCurrentStats(undefined);
+        setProcessStats(undefined);
     }
 
     const handleOrderUpdate = (orderNo: string, newAllocatedValue: number) => {
@@ -139,17 +141,14 @@ export const BillingList = () => {
                     category={category}
                     setCategory={setCategory}
                     selectedCount={selectedCount}
-                    lastTime={lastTime}
-                    todayBillsCount={todayBillsCount}
-                    todayBills={todayBills}
+                    stats={stats}
+                    step={step}
                 />
             )}
             <BillingStatsDialog
                 open={statsOpen}
                 onOpenChange={setStatsOpen}
-                stats={currentStats}
-                lastBillsCount={lastBillsCount}
-                lastBills={lastBills}
+                stats={processStats}
             />
             <OrderEditDialog
                 open={editDialogOpen}
@@ -162,6 +161,7 @@ export const BillingList = () => {
                 open={partyDialogOpen}
                 onOpenChange={setPartyDialogOpen}
                 partyId={selectedPartyId}
+                beat={selectedPartyBeat}
             />
 
             <CreditLockDialog
@@ -169,6 +169,7 @@ export const BillingList = () => {
                 onOpenChange={setCreditLockDialogOpen}
                 onPartySelect={(partyId) => {
                     setSelectedPartyId(partyId);
+                    setSelectedPartyBeat("");
                     setPartyDialogOpen(true);
                 }}
             />

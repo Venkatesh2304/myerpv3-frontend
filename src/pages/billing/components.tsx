@@ -18,7 +18,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ProcessStats, OrderProduct } from "./types";
+import { ProcessStats, OrderProduct, BillingStats } from "./types";
+import { Link } from "react-router";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/providers/company-provider";
 import { useNotification } from "@refinedev/core";
@@ -168,35 +169,51 @@ interface OrdersListProps {
     category: 'normal' | 'partial' | 'less_than_config';
     setCategory: (category: 'normal' | 'partial' | 'less_than_config') => void;
     selectedCount: number;
-    lastTime?: string;
-    todayBillsCount?: number;
-    todayBills?: string;
+    stats: BillingStats;
+    step: 'input' | 'review';
 }
 
-export const OrdersList: React.FC<OrdersListProps> = ({ table, category, setCategory, selectedCount, lastTime, todayBillsCount, todayBills }) => {
+export const OrdersList: React.FC<OrdersListProps> = ({ table, category, setCategory, selectedCount, stats, step }) => {
     return (
         <div className="mt-4 space-y-4">
             <div className="flex items-center justify-between gap-4">
-                <Select value={category} onValueChange={(val: any) => setCategory(val)}>
-                    <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="normal">Normal</SelectItem>
-                        <SelectItem value="partial">Partial</SelectItem>
-                        <SelectItem value="less_than_config">Less Than Config Value</SelectItem>
-                    </SelectContent>
-                </Select>
+                <div className="flex items-center gap-4">
+                    <Select value={category} onValueChange={(val: any) => setCategory(val)}>
+                        <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="partial">Partial</SelectItem>
+                            <SelectItem value="less_than_config">Less Than Config Value</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    {!!stats.unprinted_bills_count && (
+                        <Link to="/print">
+                            <div className={cn(
+                                "cursor-pointer font-medium px-3 py-1 rounded-md border",
+                                (stats.unprinted_bills_count || 0) > 10
+                                    ? "bg-red-100 text-red-700 border-red-200"
+                                    : "bg-secondary text-secondary-foreground border-secondary"
+                            )}>
+                                To Print: {stats.unprinted_bills_count}
+                            </div>
+                        </Link>
+                    )}
+                </div>
 
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    {lastTime && <div>Last Time: <span className="font-medium text-foreground">{lastTime}</span></div>}
-                    {todayBillsCount !== undefined && <div>Today Bills: <span className="font-medium text-foreground">{todayBillsCount}</span></div>}
-                    {todayBills && <div>Bills: <span className="font-medium text-foreground">{todayBills}</span></div>}
+                    {stats.last_time && <div>Last Time: <span className="font-medium text-foreground">{stats.last_time}</span></div>}
+                    {stats.today_bills_count !== undefined && <div>Today Bills: <span className="font-medium text-foreground">{stats.today_bills_count}</span></div>}
+                    {stats.last_bills_count !== undefined && <div>Last Bills: <span className="font-medium text-foreground">{stats.last_bills_count}</span></div>}
+                    {stats.user && <div>User: <span className="font-medium text-foreground">{stats.user}</span></div>}
                 </div>
             </div>
-            <div className="border rounded-md">
-                <DataTable table={table} />
-            </div>
+            {step === 'review' && (
+                <div className="border rounded-md">
+                    <DataTable table={table} />
+                </div>
+            )}
         </div >
     );
 };
@@ -354,11 +371,9 @@ interface BillingStatsDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     stats: ProcessStats | undefined;
-    lastBillsCount?: number;
-    lastBills?: string;
 }
 
-export const BillingStatsDialog: React.FC<BillingStatsDialogProps> = ({ open, onOpenChange, stats, lastBillsCount, lastBills }) => {
+export const BillingStatsDialog: React.FC<BillingStatsDialogProps> = ({ open, onOpenChange, stats }) => {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
@@ -366,13 +381,6 @@ export const BillingStatsDialog: React.FC<BillingStatsDialogProps> = ({ open, on
                     <DialogTitle>Last Billing</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                    {(
-                        <div className="mb-4 p-4 bg-muted rounded-md">
-                            {lastBillsCount && <div className="text-sm ">Last Bills Count: {lastBillsCount}</div>}
-                            {lastBills && <div className="font-semibold">{lastBills}</div>}
-                        </div>
-                    )}
-
                     <div className="space-y-2 text-sm">
                         {stats && Object.entries(stats).map(([process, time]) => (
                             <div key={process} className="flex justify-between items-center border-b pb-2">
@@ -396,9 +404,10 @@ interface PartyDetailsDialogProps {
     partyId: string | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    beat?: string;
 }
 
-export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId, open, onOpenChange }) => {
+export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId, open, onOpenChange, beat }) => {
     const { company } = useCompany();
     const { open: notify } = useNotification();
     const [loading, setLoading] = React.useState(false);
@@ -441,6 +450,7 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId,
                 query: {
                     company: company?.id,
                     party_id: partyId,
+                    beat: beat,
                 },
             });
             if (response?.data) {
@@ -488,6 +498,7 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId,
                 query: {
                     company: company?.id,
                     party_id: partyId,
+                    beat: beat,
                 },
             });
             if (response?.data) {
@@ -508,7 +519,7 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId,
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="min-w-[60vw] max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Party Details: {partyId}</DialogTitle>
+                    <DialogTitle>Party Details: {partyId} {beat && `- ${beat}`}</DialogTitle>
                 </DialogHeader>
 
                 {loading ? (

@@ -32,15 +32,20 @@ export interface ProcessStats {
     [key: string]: number;
 }
 
-export interface BillingResponse {
-    orders?: Order[];
-    hash?: string;
-    process?: ProcessStats;
+export interface BillingStats {
     last_bills_count?: number;
     last_bills?: string;
     last_time?: string;
     today_bills_count?: number;
     today_bills?: string;
+    unprinted_bills_count?: number;
+    user?: string;
+    process?: ProcessStats;
+}
+
+export interface BillingResponse extends BillingStats {
+    orders?: Order[];
+    hash?: string;
     message?: string;
     error?: string;
 }
