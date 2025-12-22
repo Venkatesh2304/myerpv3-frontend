@@ -67,3 +67,7 @@ export interface PartyCreditResponse {
     days: number;
     value: number;
 }
+
+export interface StopBillingResponse {
+    stop: boolean;
+}

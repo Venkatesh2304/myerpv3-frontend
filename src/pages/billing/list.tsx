@@ -25,7 +25,7 @@ export const BillingList = () => {
         },
         queryOptions: {
             enabled: !!company?.id,
-            refetchInterval: 60 * 1000,
+            refetchInterval: 120 * 1000,
         }
     });
 

@@ -4,12 +4,22 @@ import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/
 import { DatePicker } from "@/components/custom/date-picker";
 import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import {
+    DialogTitle,
     Dialog,
     DialogContent,
     DialogHeader,
-    DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
     Select,
     SelectContent,
@@ -18,11 +28,11 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ProcessStats, OrderProduct, BillingStats } from "./types";
+import { ProcessStats, OrderProduct, BillingStats, StopBillingResponse } from "./types";
 import { Link } from "react-router";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/providers/company-provider";
-import { useNotification } from "@refinedev/core";
+import { useNotification, useCustom } from "@refinedev/core";
 import { dataProvider } from "@/lib/dataprovider";
 import {
     Table,
@@ -50,6 +60,49 @@ interface BillingControlsProps {
 }
 
 export const BillingControls: React.FC<BillingControlsProps> = ({ form, onGetOrders, onPlaceOrder, onCancel, onShowStats, onCreditLock, step }) => {
+    const { company } = useCompany();
+    const { open: notify } = useNotification();
+    const [stopBillingDialogOpen, setStopBillingDialogOpen] = React.useState(false);
+
+    const { result:{data: stopBillingData} , query:{ refetch: refetchStopBilling } } = useCustom<StopBillingResponse>({
+        url: '/stop_billing',
+        method: 'get',
+        config: {
+            query: { company: company?.id },
+        },
+        queryOptions: {
+            enabled: !!company?.id,
+        }
+    });
+
+    const isStopped = stopBillingData?.stop || false;
+
+    const handleConfirmStopBilling = async () => {
+        if (!company?.id) return;
+        try {
+            await dataProvider.custom?.({
+                url: '/stop_billing/',
+                method: 'post',
+                payload: {
+                    company: company.id,
+                    stop: !isStopped,
+                },
+            });
+            refetchStopBilling();
+            setStopBillingDialogOpen(false);
+            notify?.({
+                type: "success",
+                message: `Billing ${!isStopped ? "stopped" : "resumed"} successfully`,
+            });
+        } catch (error: any) {
+            notify?.({
+                type: "error",
+                message: "Error updating billing status",
+                description: error.message,
+            });
+        }
+    };
+
     return (
         <div className="w-full">
             <Form {...form}>
@@ -115,8 +168,27 @@ export const BillingControls: React.FC<BillingControlsProps> = ({ form, onGetOrd
                             Credit Lock
                         </Button>
                     </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant={isStopped ? "default" : "destructive"}
+                            onClick={() => setStopBillingDialogOpen(true)}
+                            className={cn(
+                                "w-32",
+                                isStopped ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
+                            )}
+                        >
+                            {isStopped ? "RESUME" : "STOP"}
+                        </Button>
+                    </div>
                 </div>
             </Form>
+            <StopBillingDialog
+                open={stopBillingDialogOpen}
+                onOpenChange={setStopBillingDialogOpen}
+                onConfirm={handleConfirmStopBilling}
+                isStopped={isStopped}
+            />
         </div>
     );
 };
@@ -646,3 +718,30 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId,
         </Dialog>
     );
 };
+
+interface StopBillingDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onConfirm: () => void;
+    isStopped: boolean;
+}
+
+export const StopBillingDialog: React.FC<StopBillingDialogProps> = ({ open, onOpenChange, onConfirm, isStopped }) => {
+    return (
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Confirm Action</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Are you sure you want to {isStopped ? "resume" : "stop"} billing for this company?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={onConfirm}>Confirm</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+};
+

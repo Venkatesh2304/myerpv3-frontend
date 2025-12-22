@@ -22,6 +22,7 @@ import {
 import { ResourceCombobox } from "@/components/custom/resource-combobox";
 import { CurrencyInput } from "@/components/custom/currency-input";
 import { useFormContext } from "react-hook-form";
+import { useCompany } from "@/providers/company-provider";
 
 const BANKS = [
     "KVB 650",
@@ -46,7 +47,7 @@ const BANKS = [
 
 export const ChequeDetailsCard = () => {
     const { control } = useFormContext();
-
+    const { company } = useCompany();
     return (
         <Card>
             <CardHeader>
@@ -112,7 +113,7 @@ export const ChequeDetailsCard = () => {
 
                     <FormField
                         control={control}
-                        name="party"
+                        name="party_id"
                         rules={{ required: "Party is required" }}
                         render={({ field }) => (
                             <FormItem>
@@ -126,6 +127,9 @@ export const ChequeDetailsCard = () => {
                                         minSearchLength={3}
                                         labelKey="label"
                                         valueKey="value"
+                                        filters={
+                                            [{ "field": "company", "operator": "eq", "value": company?.id }]
+                                        }
                                     />
                                 </FormControl>
                                 <FormMessage />

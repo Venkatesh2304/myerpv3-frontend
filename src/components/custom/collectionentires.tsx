@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/custom/combobox";
 import { Plus, Trash2 } from "lucide-react";
+import { useCompany } from "@/providers/company-provider";
 
 export interface ValidationResult {
     isValid: boolean;
@@ -32,7 +33,7 @@ export const validateCollectionEntries = (
 ): ValidationResult => {
 
     for (const collection of collections) {
-        if (collection.amt > collection.balance) {
+        if ((!!collection.balance) && (collection.amt > collection.balance)) {
             return {
                 isValid: false,
                 message: `Collection amount (₹${collection.amt.toLocaleString("en-IN")}) cannot exceed balance (₹${collection.balance.toLocaleString("en-IN")})`,
@@ -67,8 +68,9 @@ export const CollectionEntries = ({
     disabled?: boolean;
 }) => {
     const { control, setValue, watch } = useFormContext();
+    const { company } = useCompany();
     const dataProvider = useDataProvider();
-    const partyId = watch("party");
+    const partyId = watch("party_id");
     const { fields, append, remove } = useFieldArray({
         control,
         name: "collection",
@@ -82,7 +84,13 @@ export const CollectionEntries = ({
         days: number;
     }>({
         resource: "outstanding",
-        filters: partyId ? [{ field: "party", operator: "eq", value: partyId }] : [],
+        filters: partyId ? [
+            { field: "party", operator: "eq", value: partyId },
+            { field: "company", operator: "eq", value: company?.id }
+        ] : [],
+        pagination: {
+            mode: "off"
+        },
         queryOptions: {
             enabled: !!partyId,
         },
@@ -100,19 +108,22 @@ export const CollectionEntries = ({
         if (!billNumber) return;
 
         try {
-            const { data } = await dataProvider().getOne({
+            const { data } = await dataProvider().getList({
                 resource: "outstanding",
-                id: billNumber,
-            });
-
-            if (data) {
-                setValue(`collection.${index}.party`, data.party);
-                setValue(`collection.${index}.balance`, data.balance);
-
-                const currentAmount = watch(`collection.${index}.amt`);
-                if (!currentAmount || currentAmount === 0) {
-                    setValue(`collection.${index}.amt`, data.balance);
+                filters: [
+                    { field: "inum", operator: "eq", value: billNumber },
+                    { field: "company", operator: "eq", value: company?.id }
+                ],
+                pagination: {
+                    mode: "off"
                 }
+            });
+            if (data && data.length > 0) {
+                const party = data[0].party;
+                const balance = data[0].balance;
+                setValue(`collection.${index}.party`, party);
+                setValue(`collection.${index}.balance`, balance);
+                setValue(`collection.${index}.amt`, balance);
             }
         } catch (error) {
             console.error("Error fetching bill details:", error);

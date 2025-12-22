@@ -29,15 +29,15 @@ const dataProvider = (
     const queryFilters = generateFilter(filters);
 
     const query: {
-      _start?: number;
-      _end?: number;
+      limit?: number;
+      offset?: number;
       _sort?: string;
       _order?: string;
     } = {};
 
     if (mode === "server") {
-      query._start = (currentPage - 1) * pageSize;
-      query._end = currentPage * pageSize;
+      query.offset = (currentPage - 1) * pageSize;
+      query.limit = currentPage * pageSize;
     }
 
     const generatedSort = generateSort(sorters);
@@ -51,15 +51,14 @@ const dataProvider = (
     const urlWithQuery = Object.keys(combinedQuery).length
       ? `${url}?${stringify(combinedQuery)}`
       : url;
-    const { data, headers } = await httpClient[requestMethod](urlWithQuery, {
+    const { data: response, headers } = await httpClient[requestMethod](urlWithQuery, {
       headers: headersFromMeta,
     });
 
-    const total = +headers["x-total-count"];
-
+    const data = mode == "server" ? response?.results : response;
     return {
       data,
-      total: total || data.length,
+      total: data.length,
     };
   },
 

@@ -39,11 +39,8 @@ export const DepositSlipButton = ({
                 },
             });
 
-            if (response?.data instanceof Response) {
-                await downloadFromResponse(response.data, "deposit_slip.xlsx");
-            } else {
-                throw new Error("Invalid response format");
-            }
+
+            await downloadFromResponse(response, "deposit_slip.xlsx");
 
             openNotification?.({
                 type: "success",

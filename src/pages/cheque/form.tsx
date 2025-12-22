@@ -4,7 +4,7 @@ import type { Cheque } from "@/pages/cheque/types";
 import { useNotificationProvider } from "@/components/refine-ui/notification/use-notification-provider";
 import { CollectionEntries, validateCollectionEntries } from "@/components/custom/collectionentires";
 import { ChequeDetailsCard } from "./components/cheque-details-card";
-
+import { useCompany } from "@/providers/company-provider";
 
 interface ChequeFormProps {
   footer?: React.ReactNode;
@@ -12,6 +12,7 @@ interface ChequeFormProps {
 
 export const ChequeForm = ({ footer }: ChequeFormProps) => {
   const notification = useNotificationProvider();
+  const { company } = useCompany();
   const form = useForm<Cheque>({
     refineCoreProps: {},
   });
@@ -22,7 +23,6 @@ export const ChequeForm = ({ footer }: ChequeFormProps) => {
   } = form;
 
   function onSubmit(values: Cheque) {
-    // Now perform business logic validation
     const collections = values?.collection || [];
     const total = values?.amt || 0;
     const validation = validateCollectionEntries(total, collections, 50);
@@ -40,7 +40,7 @@ export const ChequeForm = ({ footer }: ChequeFormProps) => {
 
       return;
     }
-    onFinish(values);
+    onFinish({ company: company?.id, ...values });
   }
 
   return (

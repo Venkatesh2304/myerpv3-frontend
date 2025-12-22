@@ -3,6 +3,7 @@ export interface ChequeCollection {
   amt: number;
   bill: string;
   party: string;
+  company: string;
 }
 
 export interface Cheque {

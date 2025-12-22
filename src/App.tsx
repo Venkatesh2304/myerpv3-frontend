@@ -106,12 +106,12 @@ function App() {
               >
                 <Route path="/cheque">
                   <Route index element={<ChequeList />} />
-                  <Route path="edit/:id" element={<ChequeEdit />} />
-                  <Route path="create" element={<ChequeCreate />} />
+                  <Route path="edit/:id" element={<CompanyRouteWrapper Component={ChequeEdit} />} />
+                  <Route path="create" element={<CompanyRouteWrapper Component={ChequeCreate} />} />
                 </Route>
                 <Route path="/bank">
                   <Route index element={<BankList />} />
-                  <Route path="edit/:id" element={<BankEdit />} />
+                  <Route path="edit/:id" element={<CompanyRouteWrapper Component={BankEdit} />} />
                 </Route>
                 <Route path="/print">
                   <Route index element={<CompanyRouteWrapper Component={BillList} />} />

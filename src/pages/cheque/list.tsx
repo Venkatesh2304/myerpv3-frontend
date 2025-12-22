@@ -10,13 +10,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import type { Cheque } from "./types";
 import { DepositSlipButton } from "./components/deposit-slip-button";
+import { useCompany } from "@/providers/company-provider";
+import { CrudFilter } from "@refinedev/core";
 
 export const ChequeList = () => {
   const [showOnlyDepositable, setShowOnlyDepositable] = React.useState(false);
-
+  const { company } = useCompany();
   const columns = React.useMemo(() => {
     const columnHelper = createColumnHelper<Cheque>();
-
     return [
       columnHelper.accessor("cheque_date", {
         id: "cheque_date",
@@ -66,28 +67,32 @@ export const ChequeList = () => {
         id: "actions",
         header: "",
         cell: ({ row }) => (
-          <EditButton
-            recordItemId={row.original.id}
-          />
+          <div className="flex items-end">
+            <EditButton
+              recordItemId={row.original.id}
+            />
+          </div>
         ),
         size: 100
       }),
     ];
   }, []);
 
+  const filters: CrudFilter[] = React.useMemo(() => {
+    const filters: CrudFilter[] = [
+      { field: "company", operator: "eq", value: company?.id },
+    ];
+    if (showOnlyDepositable) {
+      filters.push({ field: "is_depositable", operator: "eq", value: "true" });
+    }
+    return filters;
+  }, [company?.id, showOnlyDepositable]);
+
   const table = useTable({
     columns,
     refineCoreProps: {
       filters: {
-        permanent: showOnlyDepositable
-          ? [
-            {
-              field: "is_depositable",
-              operator: "eq",
-              value: true,
-            },
-          ]
-          : [],
+        permanent: filters,
       },
     },
     enableRowSelection: true
