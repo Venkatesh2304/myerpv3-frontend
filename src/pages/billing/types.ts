@@ -26,6 +26,7 @@ export interface OrderProduct {
     aq: number; // Allocated Qty
     qp: number; // To Bill Qty (editable)
     ar: string; // Reason
+    n: number;  // Norm
 }
 
 export interface ProcessStats {

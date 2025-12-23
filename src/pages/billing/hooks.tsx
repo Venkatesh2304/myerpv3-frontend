@@ -184,7 +184,7 @@ export const useBillingActions = () => {
     const { open } = useNotification();
     const { company } = useCompany();
 
-    const getOrders = async (date: string, lines: number): Promise<BillingResponse | null> => {
+    const getOrders = async (date: string, lines: number, beatType: 'retail' | 'wholesale'): Promise<BillingResponse | null> => {
         if (!company?.id) {
             open?.({
                 type: "error",
@@ -201,6 +201,7 @@ export const useBillingActions = () => {
                     order_date: date,
                     lines: lines,
                     company: company.id,
+                    beat_type: beatType,
                 },
             });
             return response?.data as BillingResponse;

@@ -64,7 +64,7 @@ export const BillingControls: React.FC<BillingControlsProps> = ({ form, onGetOrd
     const { open: notify } = useNotification();
     const [stopBillingDialogOpen, setStopBillingDialogOpen] = React.useState(false);
 
-    const { result:{data: stopBillingData} , query:{ refetch: refetchStopBilling } } = useCustom<StopBillingResponse>({
+    const { result: { data: stopBillingData }, query: { refetch: refetchStopBilling } } = useCustom<StopBillingResponse>({
         url: '/stop_billing',
         method: 'get',
         config: {
@@ -133,6 +133,26 @@ export const BillingControls: React.FC<BillingControlsProps> = ({ form, onGetOrd
                             disabled={step === 'review'}
                         />
                     </div>
+                    <FormField
+                        control={form.control}
+                        name="beat_type"
+                        render={({ field }) => (
+                            <FormItem className="grid w-full max-w-sm items-center gap-1.5">
+                                <FormLabel className="text-xs">Beat Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger className="w-[120px]">
+                                            <SelectValue placeholder="Select beat type" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="retail">Retail</SelectItem>
+                                        <SelectItem value="wholesale">Wholesale</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </FormItem>
+                        )}
+                    />
                     {step === 'input' ? (
                         <LoadingButton
                             onClick={onGetOrders}
@@ -302,10 +322,12 @@ export const OrderEditDialog: React.FC<OrderEditDialogProps> = ({ orderNo, open,
     const { open: notify } = useNotification();
     const [loading, setLoading] = React.useState(false);
     const [products, setProducts] = React.useState<OrderProduct[]>([]);
+    const [percentage, setPercentage] = React.useState("100");
 
     React.useEffect(() => {
         if (open && orderNo && company?.id) {
             fetchOrderDetails();
+            setPercentage("100");
         }
     }, [open, orderNo, company?.id]);
 
@@ -373,10 +395,75 @@ export const OrderEditDialog: React.FC<OrderEditDialogProps> = ({ orderNo, open,
         setProducts(prev => prev.map(p => p.id === id ? { ...p, qp: numValue } : p));
     };
 
+    const handlePercentageChange = (val: string) => {
+        setPercentage(val);
+        const percent = parseInt(val);
+        if (isNaN(percent)) return;
+
+        // Reset to allocated first to have a clean slate for calculation
+        // We need to use the current products state but reset qp to aq
+        // Actually, we should probably base this off the original fetched data if we wanted to be purely functional,
+        // but 'products' state is our source of truth for 'aq' and 't' and 'n'.
+        // So we create a working copy where qp = aq.
+
+        let newProducts = products.map(p => ({ ...p, qp: p.aq }));
+
+        if (percent === 100) {
+            setProducts(newProducts);
+            return;
+        }
+
+        const totalAllocatedValue = newProducts.reduce((sum, p) => sum + (p.aq * p.t), 0);
+        const targetValue = totalAllocatedValue * (percent / 100);
+
+        // Sort indices by rate (t) descending
+        const sortedIndices = newProducts
+            .map((p, index) => ({ index, t: p.t, n: p.n || 0 }))
+            .sort((a, b) => b.t - a.t);
+
+        let currentValue = totalAllocatedValue;
+
+        for (const { index, t, n } of sortedIndices) {
+            if (currentValue <= targetValue) break;
+
+            const product = newProducts[index];
+            const currentQty = product.qp;
+            const maxReducibleQty = currentQty - n;
+
+            if (maxReducibleQty <= 0) continue;
+
+            const maxReducibleValue = maxReducibleQty * t;
+            const neededReduction = currentValue - targetValue;
+
+            if (maxReducibleValue <= neededReduction) {
+                // Reduce fully to norm
+                newProducts[index].qp = n;
+                currentValue -= maxReducibleValue;
+            } else {
+                // Reduce partially to meet target
+                // We need to reduce value by at least 'neededReduction'
+                // reductionValue = reductionQty * t >= neededReduction
+                // reductionQty >= neededReduction / t
+                const reductionQty = Math.ceil(neededReduction / t);
+                newProducts[index].qp = currentQty - reductionQty;
+                currentValue -= reductionQty * t;
+                break; // Target reached
+            }
+        }
+        setProducts(newProducts);
+    };
+
     const totalValue = React.useMemo(() => {
         return products.reduce((sum, product) => {
             return sum + (product.t * (product.qp || 0));
         }, 0);
+    }, [products]);
+
+    const currentPercentage = React.useMemo(() => {
+        const totalAllocated = products.reduce((sum, p) => sum + (p.aq * p.t), 0);
+        if (totalAllocated === 0) return "0.00";
+        const currentTotal = products.reduce((sum, p) => sum + ((p.qp || 0) * p.t), 0);
+        return ((currentTotal / totalAllocated) * 100).toFixed(2);
     }, [products]);
 
     return (
@@ -390,12 +477,27 @@ export const OrderEditDialog: React.FC<OrderEditDialogProps> = ({ orderNo, open,
                     <div className="flex justify-center p-8">Loading...</div>
                 ) : (
                     <div className="space-y-4">
+                        <div className="flex justify-end items-center gap-2">
+                            <Label>Reduce Value to:</Label>
+                            <Select value={percentage} onValueChange={handlePercentageChange}>
+                                <SelectTrigger className="w-[100px]">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="100">100%</SelectItem>
+                                    <SelectItem value="75">75%</SelectItem>
+                                    <SelectItem value="50">50%</SelectItem>
+                                    <SelectItem value="25">25%</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div className="border rounded-md">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead className="w-[200px]">Product</TableHead>
                                         <TableHead className="w-[50px]">Rate</TableHead>
+                                        <TableHead className="w-[50px]">Norm</TableHead>
                                         <TableHead className="w-[50px]">Order Qty</TableHead>
                                         <TableHead className="w-[50px]">Allocated</TableHead>
                                         <TableHead className="w-[100px]">To Bill</TableHead>
@@ -407,14 +509,15 @@ export const OrderEditDialog: React.FC<OrderEditDialogProps> = ({ orderNo, open,
                                         <TableRow key={product.id}>
                                             <TableCell>{product.bd}</TableCell>
                                             <TableCell>{product.t}</TableCell>
+                                            <TableCell>{product.n || 0}</TableCell>
                                             <TableCell>{product.cq}</TableCell>
-                                            <TableCell>{product.aq}</TableCell>
+                                            <TableCell className={product?.qp < product.aq ? "text-red-500" : ""}>{product.aq}</TableCell>
                                             <TableCell>
                                                 <Input
                                                     type="number"
                                                     value={product.qp || ""}
                                                     onChange={(e) => handleQuantityChange(product.id, e.target.value)}
-                                                    className="w-20 h-8"
+                                                    className={"w-20 h-8"}
                                                 />
                                             </TableCell>
                                             <TableCell className="text-muted-foreground text-sm">{product.ar}</TableCell>
@@ -425,7 +528,7 @@ export const OrderEditDialog: React.FC<OrderEditDialogProps> = ({ orderNo, open,
                         </div>
                         <div className="flex flex-col gap-4">
                             <div className="flex justify-end items-center px-4">
-                                <span className="text-lg font-semibold">Total Value: ₹{totalValue.toFixed(0)}</span>
+                                <span className="text-lg font-semibold">Total Value: ₹{totalValue.toFixed(0)} ({currentPercentage}%)</span>
                             </div>
                             <div className="flex justify-end gap-2">
                                 <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

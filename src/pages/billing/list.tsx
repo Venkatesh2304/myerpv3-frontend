@@ -45,6 +45,7 @@ export const BillingList = () => {
         defaultValues: {
             lines: 100,
             date: new Date().toISOString().split('T')[0],
+            beat_type: 'retail',
         },
     });
 
@@ -69,7 +70,7 @@ export const BillingList = () => {
 
     const handleGetOrders = async () => {
         const values = form.getValues();
-        const result = await getOrders(values.date, values.lines);
+        const result = await getOrders(values.date, values.lines, values.beat_type);
         if (result) {
             if (result.process) {
                 setProcessStats(result.process);
