@@ -67,7 +67,7 @@ function App() {
                 },
               },
               {
-                name: "bank",
+                name: "bankstatement",
                 list: "/bank",
                 edit: "/bank/edit/:id",
                 meta: {
@@ -110,7 +110,7 @@ function App() {
                   <Route path="create" element={<CompanyRouteWrapper Component={ChequeCreate} />} />
                 </Route>
                 <Route path="/bank">
-                  <Route index element={<BankList />} />
+                  <Route index element={<CompanyRouteWrapper Component={BankList} />} />
                   <Route path="edit/:id" element={<CompanyRouteWrapper Component={BankEdit} />} />
                 </Route>
                 <Route path="/print">

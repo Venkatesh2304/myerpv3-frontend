@@ -19,6 +19,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import type { Bank } from "@/pages/bank/types";
+import { useCompany } from "@/providers/company-provider";
 import { useDataProvider } from "@refinedev/core";
 import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
@@ -41,6 +42,7 @@ export const ChequeDetailsSection = ({
     bankId?: string | number;
 }) => {
     const { control } = useFormContext<Bank>();
+    const { company } = useCompany();
     const dataProvider = useDataProvider();
     const [chequeOptions, setChequeOptions] = useState<ChequeOption[]>([]);
     const [isLoadingCheques, setIsLoadingCheques] = useState(false);
@@ -50,8 +52,12 @@ export const ChequeDetailsSection = ({
             setIsLoadingCheques(true);
             dataProvider()
                 .custom({
-                    url: `/cheque_match/${bankId}/`,
-                    method: "get",
+                    url: `/cheque_match/`,
+                    method: "post",
+                    payload: {
+                        bank_id: bankId,
+                        company: company?.id,
+                    },
                 })
                 .then((response) => {
                     setChequeOptions((response.data as any) || []);
@@ -80,7 +86,7 @@ export const ChequeDetailsSection = ({
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="text-xs">
-                                    Cheque Number {field.value}
+                                    Cheque Number
                                 </FormLabel>
                                 <Select
                                     onValueChange={(value) =>

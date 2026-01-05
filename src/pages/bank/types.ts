@@ -12,6 +12,7 @@ export interface Bank {
   desc: string;
   amt: number;
   bank: string;
+  company: string;
   status: number;
   pushed: boolean;
   type: string | null;

@@ -25,11 +25,15 @@ import { ResourceCombobox } from "@/components/custom/resource-combobox";
 import type { Bank } from "@/pages/bank/types";
 import { useNotificationProvider } from "@/components/refine-ui/notification/use-notification-provider";
 import { validateCollectionEntries } from "@/components/custom/collectionentires";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { ChequeDetailsSection } from "./components/cheque-details-section";
 import { CurrencyInput } from "@/components/custom/currency-input";
 import { BankCollectionList } from "./components/bank-collection-list";
 import { CollectionEntries } from "@/components/custom/collectionentires";
+import { useCompany } from "@/providers/company-provider";
+import { Button } from "@/components/ui/button";
+import { dataProvider } from "@/lib/dataprovider";
+import { LoadingButton } from "@/components/ui/loading-button";
 
 const BANKS = [
   { value: "KVB CA", label: "KVB CA" },
@@ -47,15 +51,17 @@ const COLLECTION_TYPES = [
 
 export const BankForm = ({ footer }: { footer: ReactNode }) => {
   const notification = useNotificationProvider();
+  const { company } = useCompany();
 
   const form = useForm<Bank>({
     refineCoreProps: {},
     defaultValues: {
       pushed: false,
       type: "",
-      party: "",
+      party_id: "",
       cheque_entry: null,
       cheque_status: null,
+      collection: []
     },
     shouldUnregister: false,
   });
@@ -71,8 +77,40 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
 
   const type = watch("type");
   const pushed = watch("pushed");
+  const partyId = watch("party_id");
   const bankId = id;
   const isDisabled = pushed === true;
+
+  const handleAutoMatch = async () => {
+    if (!partyId || !bankId) return;
+
+    try {
+      const response = await dataProvider.custom({
+        url: "/match_neft/",
+        method: "post",
+        payload: {
+          company: company?.id,
+          party_id: partyId,
+          bankstatement_id: bankId,
+        },
+      });
+
+      if (response.data.status === "success") {
+        setValue("collection", response.data.matched_outstanding);
+        notification.open({
+          type: "success",
+          message: "Auto match successful",
+          description: `Matched ${response.data.matched_outstanding.length} invoices.`,
+        });
+      }
+    } catch (error: any) {
+      notification.open({
+        type: "error",
+        message: "Auto match failed",
+        description: error?.response?.data?.error || "Something went wrong",
+      });
+    }
+  };
 
   function onSubmit(values: Bank) {
     // Validation based on type
@@ -121,8 +159,10 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
 
         return;
       }
+    } else {
+      values = { ...values, collection: [] }
     }
-
+    values = { ...values, company: company?.id }
     onFinish(values);
   }
 
@@ -130,8 +170,19 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-6">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Bank Entry Details</CardTitle>
+            {type === "neft" && partyId && !isDisabled && (
+              <LoadingButton
+                type="button"
+                variant="secondary"
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+                size="sm"
+                onClick={handleAutoMatch}
+              >
+                Auto Match
+              </LoadingButton>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             {/* First Row */}
@@ -166,7 +217,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
                       <CurrencyInput
                         {...field}
                         value={field.value || ""}
-                        disabled
+                        readOnly
                         className="text-black"
                       />
                     </FormControl>
@@ -182,26 +233,13 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">Bank</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value || undefined}
-                      key={field.value}
-                      disabled={isDisabled}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select bank" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {BANKS.map((bank) => (
-                          <SelectItem key={bank.value} value={bank.value}>
-                            {bank.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
+                    <Input
+                      type="text"
+                      {...field}
+                      value={field.value || ""}
+                      disabled
+                      className="bg-muted"
+                    />
                   </FormItem>
                 )}
               />
@@ -239,8 +277,8 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
 
               <FormField
                 control={control}
-                name="party"
-                rules={{ required: "Party is required" }}
+                name="party_id"
+                rules={{ required: type == "neft" ? "Party is required" : false }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">Party</FormLabel>
@@ -254,6 +292,13 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
                         labelKey="label"
                         valueKey="value"
                         disabled={isDisabled}
+                        filters={[
+                          {
+                            field: "company",
+                            operator: "eq",
+                            value: company?.id,
+                          },
+                        ]}
                       />
                     </FormControl>
                     <FormMessage />

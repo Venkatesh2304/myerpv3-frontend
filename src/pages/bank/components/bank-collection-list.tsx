@@ -28,8 +28,11 @@ export const BankCollectionList = ({
             setIsLoading(true);
             dataProvider()
                 .custom({
-                    url: `/bank_collection/${bankId}/`,
-                    method: "get",
+                    url: `/bank_collection/`,
+                    method: "post",
+                    payload: {
+                        bank_id: bankId,
+                    },
                 })
                 .then((response) => {
                     setCollections((response.data as any) || []);

@@ -69,6 +69,8 @@ export const ChequeList = () => {
         cell: ({ row }) => (
           <div className="flex items-end">
             <EditButton
+              className="rounded-full"
+              // hidden={!!row.original.bank_entry}
               recordItemId={row.original.id}
             />
           </div>

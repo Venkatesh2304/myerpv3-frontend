@@ -76,7 +76,6 @@ export const CollectionEntries = ({
         name: "collection",
     });
 
-
     const { query: { data: billData, isLoading: isBillsLoading } } = useList<{
         bill: string;
         balance: number;

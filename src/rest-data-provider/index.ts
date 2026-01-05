@@ -37,7 +37,7 @@ const dataProvider = (
 
     if (mode === "server") {
       query.offset = (currentPage - 1) * pageSize;
-      query.limit = currentPage * pageSize;
+      query.limit = pageSize;
     }
 
     const generatedSort = generateSort(sorters);
@@ -58,7 +58,7 @@ const dataProvider = (
     const data = mode == "server" ? response?.results : response;
     return {
       data,
-      total: data.length,
+      total: response?.count,
     };
   },
 
