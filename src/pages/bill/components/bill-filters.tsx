@@ -1,11 +1,5 @@
 import { DatePicker } from "@/components/custom/date-picker";
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-} from "@/components/ui/form";
+import { getFilterValue, handleFilterChange } from "@/lib/filters";
 import {
     Select,
     SelectContent,
@@ -13,7 +7,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { useFilters } from "@/hooks/filters";
+import { Label } from "@/components/ui/label";
 import { CrudFilters, useList } from "@refinedev/core";
 import React from "react";
 
@@ -71,11 +65,10 @@ export const mapFormToFilters = (values: any) => {
             value: values.print_type,
         });
     }
-    console.log("Filter: ", filters);
     return filters;
 };
 
-const SalesmanFilter = React.memo(({ control, companyId }: { control: any; companyId?: string | number }) => {
+const SalesmanFilter = React.memo(({ value, onChange, companyId }: { value: string; onChange: (value: string) => void; companyId?: string | number }) => {
     const {
         query: { data: salesmanData },
     } = useList({
@@ -90,105 +83,85 @@ const SalesmanFilter = React.memo(({ control, companyId }: { control: any; compa
         ] : undefined,
     });
     return (
-        <FormField
-            control={control}
-            name="salesman"
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="text-xs">Salesman</FormLabel>
-                    <Select value={field.value || ""} onValueChange={field.onChange}>
-                        <FormControl>
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Salesman" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            {(salesmanData as any)?.data?.map((item: any) => (
-                                <SelectItem key={item} value={item}>
-                                    {item}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </FormItem>
-            )}
-        />
+        <div className="flex flex-col space-y-2">
+            <Label className="text-xs">Salesman</Label>
+            <Select value={value} onValueChange={onChange}>
+                <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Salesman" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {(salesmanData as any)?.data?.map((item: any) => (
+                        <SelectItem key={item} value={item}>
+                            {item}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
     );
 });
 
 export const BillFilters: React.FC<{
-    setFilters: React.Dispatch<React.SetStateAction<CrudFilters>>;
-    defaultValues: Record<string, any>;
+    filters: CrudFilters;
+    setFilters: (filters: CrudFilters) => void;
     companyId?: string | number;
-}> = ({ setFilters, defaultValues, companyId }) => {
-    const { form } = useFilters({
-        defaultValues,
-        setFilters,
-        formToFilters: mapFormToFilters,
-    });
+}> = ({ filters, setFilters, companyId }) => {
 
     return (
-        <Form {...form}>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="flex flex-col space-y-2">
+                <Label className="text-xs">Bill Date</Label>
                 <DatePicker
-                    control={form.control}
-                    name="date"
-                    label="Bill Date"
+                    value={getFilterValue(filters, "date", null)}
+                    onChange={(date) => handleFilterChange(setFilters, "date", date)}
                     placeholder="Select date"
-                    disabled={form.formState.isSubmitting}
-                />
-
-                <SalesmanFilter control={form.control} companyId={companyId} />
-
-                <FormField
-                    control={form.control}
-                    name="is_printed"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-xs">Is Printed</FormLabel>
-                            <Select value={field.value || ""} onValueChange={field.onChange}>
-                                <FormControl>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Is Printed" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {IS_PRINTED_OPTIONS.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                            {option.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </FormItem>
-                    )}
-                />
-
-                <FormField
-                    control={form.control}
-                    name="beat_type"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-xs">Beat Type</FormLabel>
-                            <Select value={field.value || ""} onValueChange={field.onChange}>
-                                <FormControl>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Beat Type" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {BEAT_TYPE_OPTIONS.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                            {option.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </FormItem>
-                    )}
                 />
             </div>
-        </Form>
+
+            <SalesmanFilter
+                value={getFilterValue(filters, "salesman")}
+                onChange={(value) => handleFilterChange(setFilters, "salesman", value)}
+                companyId={companyId}
+            />
+
+            <div className="flex flex-col space-y-2">
+                <Label className="text-xs">Is Printed</Label>
+                <Select
+                    value={getFilterValue(filters, "is_printed")}
+                    onValueChange={(value) => handleFilterChange(setFilters, "is_printed", value)}
+                >
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Is Printed" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {IS_PRINTED_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div className="flex flex-col space-y-2">
+                <Label className="text-xs">Beat Type</Label>
+                <Select
+                    value={getFilterValue(filters, "beat_type")}
+                    onValueChange={(value) => handleFilterChange(setFilters, "beat_type", value)}
+                >
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Beat Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {BEAT_TYPE_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
     );
 };

@@ -56,9 +56,10 @@ const dataProvider = (
     });
 
     const data = mode == "server" ? response?.results : response;
+    const total = mode == "server" ? response?.count : response?.length;
     return {
       data,
-      total: response?.count,
+      total,
     };
   },
 

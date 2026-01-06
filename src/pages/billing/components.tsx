@@ -126,11 +126,19 @@ export const BillingControls: React.FC<BillingControlsProps> = ({ form, onGetOrd
                         )}
                     />
                     <div className="grid w-full max-w-sm items-center gap-1.5">
-                        <DatePicker
+                        <FormField
                             control={form.control}
                             name="date"
-                            label="Order Date"
-                            disabled={step === 'review'}
+                            render={({ field }) => (
+                                <FormItem className="grid w-full max-w-sm items-center gap-1.5">
+                                    <FormLabel className="text-xs">Order Date</FormLabel>
+                                    <DatePicker
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        disabled={step === 'review'}
+                                    />
+                                </FormItem>
+                            )}
                         />
                     </div>
                     <FormField

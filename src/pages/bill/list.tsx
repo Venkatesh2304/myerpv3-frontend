@@ -23,22 +23,7 @@ export const BillList = () => {
         beat_type: "retail",
     };
 
-    const [filters, setFilters] = React.useState<CrudFilters>(() =>
-        mapFormToFilters(DEFAULT_FILTER_VALUES)
-    );
 
-    const [permanentFilters, setPermanentFilters] = React.useState<CrudFilters>([]);
-
-    React.useEffect(() => {
-        setPermanentFilters([
-            ...filters,
-            {
-                field: "company",
-                operator: "eq",
-                value: company?.id,
-            }
-        ]);
-    }, [filters, company]);
 
     const columns = React.useMemo(() => {
         const columnHelper = createColumnHelper<Bill>();
@@ -118,7 +103,14 @@ export const BillList = () => {
         getRowId: (originalRow) => originalRow.bill,
         refineCoreProps: {
             filters: {
-                permanent: permanentFilters,
+                initial: [
+                    ...mapFormToFilters(DEFAULT_FILTER_VALUES),
+                    {
+                        field: "company",
+                        operator: "eq",
+                        value: company?.id,
+                    }
+                ],
             },
             pagination: {
                 mode: "client",
@@ -126,7 +118,7 @@ export const BillList = () => {
             },
             queryOptions: {
                 retry: 1,
-                enabled: permanentFilters?.length > 0
+                enabled: !!company?.id
             },
         },
     });
@@ -136,7 +128,7 @@ export const BillList = () => {
             <ListView>
                 <Card className="mb-2 pt-4 pb-4">
                     <CardContent>
-                        <BillFilters setFilters={setFilters} defaultValues={DEFAULT_FILTER_VALUES} companyId={company?.id} />
+                        <BillFilters filters={table.refineCore.filters} setFilters={table.refineCore.setFilters} companyId={company?.id} />
                         <PrintAction table={table} />
                     </CardContent>
                 </Card >

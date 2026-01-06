@@ -191,6 +191,7 @@ const CompanyDropdown = () => {
   }
 
   return (
+    company?.id &&
     <Select
       value={company?.id?.toString()}
       onValueChange={(value) => {

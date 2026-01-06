@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { useHotkeys } from "react-hotkeys-hook";
 
 type DataTableProps<TData extends BaseRecord> = {
   table: UseTableReturnType<TData, HttpError>;
@@ -49,6 +50,26 @@ export function DataTable<TData extends BaseRecord>({
     vertical: false,
   });
 
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  // 1. Move Down
+  useHotkeys("arrowdown", (e) => {
+    e.preventDefault();
+    setActiveIndex((prev) => (prev < getRowModel().rows.length - 1 ? prev + 1 : prev));
+  });
+
+  // 2. Move Up
+  useHotkeys("arrowup", (e) => {
+    e.preventDefault();
+    setActiveIndex((prev) => (prev > 0 ? prev - 1 : prev));
+  });
+
+  // 3. Toggle Selection (Space)
+  useHotkeys("space", (e) => {
+    e.preventDefault();
+    getRowModel().rows[activeIndex].toggleSelected();
+  });
+
   useEffect(() => {
     const checkOverflow = () => {
       if (tableRef.current && tableContainerRef.current) {
@@ -72,6 +93,7 @@ export function DataTable<TData extends BaseRecord>({
 
     // Check when table data changes
     const timeoutId = setTimeout(checkOverflow, 100);
+    table?.reactTable?.resetRowSelection();
 
     return () => {
       window.removeEventListener("resize", checkOverflow);
@@ -206,7 +228,8 @@ export function DataTable<TData extends BaseRecord>({
                 return (
                   <TableRow
                     key={row.original?.id ?? row.id}
-                    data-state={row.getIsSelected() && "selected"}
+                    className={row.index === activeIndex ? "bg-accent shadow-[inset_4px_0_0_0_theme(colors.primary.DEFAULT)]" : ""}
+                    data-state={(row.getIsSelected() || activeIndex === row.index) && "selected"}
                   >
                     {hasRowSelection && (
                       <TableCell
@@ -223,7 +246,7 @@ export function DataTable<TData extends BaseRecord>({
                       >
                         <Checkbox
                           checked={row.getIsSelected()}
-                          onCheckedChange={(value) => row.toggleSelected(!!value)}
+                          onCheckedChange={(value) => { row.toggleSelected(!!value); setActiveIndex(row.index) }}
                           aria-label="Select row"
                           className="border-gray-500"
                         />

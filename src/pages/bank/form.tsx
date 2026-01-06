@@ -25,15 +25,16 @@ import { ResourceCombobox } from "@/components/custom/resource-combobox";
 import type { Bank } from "@/pages/bank/types";
 import { useNotificationProvider } from "@/components/refine-ui/notification/use-notification-provider";
 import { validateCollectionEntries } from "@/components/custom/collectionentires";
-import { ReactNode, useState } from "react";
+import { ReactNode, useRef, useState } from "react";
 import { ChequeDetailsSection } from "./components/cheque-details-section";
 import { CurrencyInput } from "@/components/custom/currency-input";
 import { BankCollectionList } from "./components/bank-collection-list";
 import { CollectionEntries } from "@/components/custom/collectionentires";
 import { useCompany } from "@/providers/company-provider";
-import { Button } from "@/components/ui/button";
 import { dataProvider } from "@/lib/dataprovider";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { useHotkeys } from "react-hotkeys-hook";
+
 
 const BANKS = [
   { value: "KVB CA", label: "KVB CA" },
@@ -52,7 +53,7 @@ const COLLECTION_TYPES = [
 export const BankForm = ({ footer }: { footer: ReactNode }) => {
   const notification = useNotificationProvider();
   const { company } = useCompany();
-
+  const [outstandingOpen, setOutstandingOpen] = useState(false);
   const form = useForm<Bank>({
     refineCoreProps: {},
     defaultValues: {
@@ -80,6 +81,22 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
   const partyId = watch("party_id");
   const bankId = id;
   const isDisabled = pushed === true;
+
+  useHotkeys("c", () => !isDisabled && setValue("type", "cheque"), {
+    enableOnFormTags: false,
+  });
+  useHotkeys("n", () => !isDisabled && setValue("type", "neft"), {
+    enableOnFormTags: false,
+  });
+  useHotkeys("u", () => !isDisabled && setValue("type", "upi"), {
+    enableOnFormTags: false,
+  });
+  useHotkeys(["ctrl+s", "meta+s"], (e) => {
+    e.preventDefault();
+    handleSubmit(onSubmit as any)();
+  }, {
+    enableOnFormTags: true,
+  });
 
   const handleAutoMatch = async () => {
     if (!partyId || !bankId) return;
@@ -197,7 +214,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
                       <Input
                         type="date"
                         {...field}
-                        value={field.value || ""}
+                        value={field.value ? new Date(field.value).toISOString().split('T')[0] : ""}
                         disabled
                         className="bg-muted"
                       />
@@ -364,6 +381,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
 
         {footer}
       </form>
+
     </Form>
   );
 };

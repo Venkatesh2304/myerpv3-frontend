@@ -6,7 +6,7 @@ import { ListView, ListViewHeader } from "@/components/refine-ui/views/list-view
 import { EditButton } from "@/components/refine-ui/buttons/edit";
 import { formatDate } from "@/lib/common";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -18,7 +18,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import type { Bank } from "./types";
 import type { CrudFilters } from "@refinedev/core";
-import { useFilters } from "@/hooks/filters";
+
 import { LoadingButton } from "@/components/ui/loading-button";
 import { dataProvider } from "@/lib/dataprovider";
 import { useNotification, useInvalidate } from "@refinedev/core";
@@ -36,9 +36,11 @@ import { DatePicker } from "@/components/custom/date-picker";
 import { downloadFile, downloadFromResponse } from "@/lib/download";
 
 import { useSelect } from "@refinedev/core";
+import { RefreshCw } from "lucide-react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { getFilterValue, handleFilterChange } from "@/lib/filters";
 import { useCompany } from "@/providers/company-provider";
 import { cn } from "@/lib/utils";
-import { RefreshCw } from "lucide-react";
 
 const COLLECTION_TYPES = [
   { value: "all", label: "All" },
@@ -59,9 +61,12 @@ const STATUS_FILTER_OPTIONS = [
 
 
 const BankFilters: React.FC<{
-  setFilters: React.Dispatch<React.SetStateAction<CrudFilters>>;
-}> = ({ setFilters }) => {
+  filters: CrudFilters;
+  setFilters: (filters: CrudFilters) => void;
+}> = ({ filters, setFilters }) => {
+
   const { company } = useCompany();
+
   const { options: bankOptions } = useSelect({
     resource: "bank",
     optionLabel: "name",
@@ -78,115 +83,92 @@ const BankFilters: React.FC<{
     ]
   });
 
-  const { form, resetFilters } = useFilters({
-    defaultValues: {
-      date: "",
-      type: "all",
-      bank: "all",
-      status: "all",
-    },
-    setFilters,
-  });
+
+
+  const resetFilters = () => {
+    setFilters(["date", "type", "bank", "status"].map((field) => ({
+      field,
+      operator: "eq",
+      value: null,
+    })));
+  };
 
   return (
     <Card className="mb-2 pt-4 pb-4">
       <CardContent className="">
-        <Form {...form}>
-          <div className="grid grid-cols-5 gap-8 items-end">
+        <div className="grid grid-cols-5 gap-8 items-end">
+          <div className="flex flex-col space-y-2">
+            <Label className="text-xs">Date</Label>
+
             <DatePicker
-              name="date"
-              label="Date"
-              control={form.control}
+              value={getFilterValue(filters, "date", null)}
+              onChange={(date) => handleFilterChange(setFilters, "date", date)}
             />
 
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Collection Type</FormLabel>
-                  <Select
-                    value={field.value || ""}
-                    onValueChange={field.onChange}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {COLLECTION_TYPES.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="bank"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Bank</FormLabel>
-                  <Select
-                    value={field.value || ""}
-                    onValueChange={field.onChange}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      {bankOptions.map((option) => (
-                        <SelectItem key={option.value} value={String(option.value)}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Status</FormLabel>
-                  <Select
-                    value={field.value || ""}
-                    onValueChange={field.onChange}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {STATUS_FILTER_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-
-
-            <Button type="button" variant="outline" onClick={resetFilters}>
-              Reset
-            </Button>
           </div>
-        </Form>
+
+          <div className="flex flex-col space-y-2">
+            <Label className="text-xs">Collection Type</Label>
+            <Select
+              value={getFilterValue(filters, "type")}
+              onValueChange={(value) => handleFilterChange(setFilters, "type", value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="" />
+              </SelectTrigger>
+              <SelectContent>
+                {COLLECTION_TYPES.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col space-y-2">
+            <Label className="text-xs">Bank</Label>
+            <Select
+              value={getFilterValue(filters, "bank")}
+              onValueChange={(value) => handleFilterChange(setFilters, "bank", value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                {bankOptions.map((option) => (
+                  <SelectItem key={option.value} value={String(option.value)}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col space-y-2">
+            <Label className="text-xs">Status</Label>
+            <Select
+              value={getFilterValue(filters, "status")}
+              onValueChange={(value) => handleFilterChange(setFilters, "status", value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="" />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_FILTER_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button type="button" variant="outline" onClick={resetFilters}>
+            Reset
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
@@ -253,6 +235,11 @@ const UploadStatementDialog = () => {
       setFile(e.target.files[0]);
     }
   };
+
+  //Upload hot key
+  useHotkeys("u", () => setOpenDialog(true), {
+    enableOnFormTags: false,
+  });
 
   const handleUpload = () => {
     if (!file) {
@@ -490,22 +477,20 @@ const SmartMatchButton = ({ table }: { table: any }) => {
 };
 
 export const BankList = () => {
-  const [filters, setFilters] = React.useState<CrudFilters>([]);
+  // const [filters, setFilters] = React.useState<CrudFilters>([]);
   const { company } = useCompany();
-  const [permanentFilters, setPermanentFilters] = React.useState<CrudFilters>([]);
+  // const [permanentFilters, setPermanentFilters] = React.useState<CrudFilters>([]);
 
-  React.useEffect(() => {
-    setPermanentFilters([
-      ...filters,
-      {
-        field: "company",
-        operator: "eq",
-        value: company?.id,
-      }
-    ]);
-  }, [filters, company]);
-
-
+  // React.useEffect(() => {
+  //   setPermanentFilters([
+  //     ...filters,
+  //     {
+  //       field: "company",
+  //       operator: "eq",
+  //       value: company?.id,
+  //     }
+  //   ]);
+  // }, [filters, company]);
 
   const columns = React.useMemo(() => {
     const columnHelper = createColumnHelper<Bank>();
@@ -577,15 +562,70 @@ export const BankList = () => {
     refineCoreProps: {
       syncWithLocation: true,
       filters: {
-        permanent: permanentFilters,
+        initial: [
+          {
+            field: "company",
+            operator: "eq",
+            value: company?.id,
+          }
+        ],
       },
       pagination: {
         mode: "server",
       },
       queryOptions: {
-        enabled: permanentFilters?.length > 0
+        enabled: !!company?.id
       },
     },
+  });
+  const { refineCore: { filters, setFilters } } = table;
+
+
+  //Reset Hot key
+  useHotkeys("r", () => setFilters(["date", "type", "bank", "status"].map((field) => ({
+    field,
+    operator: "eq",
+    value: null,
+  })))
+    , {
+      enableOnFormTags: false,
+    });
+
+  useHotkeys("t", () => setFilters([
+    {
+      field: "date",
+      operator: "eq",
+      value: new Date().toISOString().split("T")[0],
+    }
+  ]), {
+    enableOnFormTags: false,
+  });
+  useHotkeys("s", () => setFilters([
+    {
+      field: "status",
+      operator: "eq",
+      value: "not_saved",
+    }
+  ]), {
+    enableOnFormTags: false,
+  });
+  useHotkeys("p", () => setFilters([
+    {
+      field: "status",
+      operator: "eq",
+      value: "not_pushed",
+    }
+  ]), {
+    enableOnFormTags: false,
+  });
+  useHotkeys("a", () => setFilters([
+    {
+      field: "status",
+      operator: "eq",
+      value: null,
+    }
+  ]), {
+    enableOnFormTags: false,
   });
 
   return (
@@ -599,7 +639,7 @@ export const BankList = () => {
           <RefreshBankButton />
         </div>
       </ListViewHeader>
-      <BankFilters setFilters={setFilters} />
+      <BankFilters filters={filters} setFilters={setFilters} />
       <DataTable table={table} />
     </ListView>
   );

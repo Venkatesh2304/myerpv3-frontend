@@ -27,7 +27,7 @@ export const OutstandingTable = ({
         ],
         pagination: { mode: "off" },
         queryOptions: {
-            enabled: !!beat && !!party,
+            enabled: !!party,
         },
     });
 
@@ -45,7 +45,7 @@ export const OutstandingTable = ({
     if (!party) return null;
 
     return (
-        <div className="border rounded-md mt-4">
+        <div className="border rounded-md mt-4 h-[500px] overflow-y-scroll">
             <Table>
                 <TableHeader>
                     <TableRow>

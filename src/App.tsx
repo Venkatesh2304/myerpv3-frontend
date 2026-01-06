@@ -82,6 +82,7 @@ function App() {
                 text: "ERP",
                 icon: <Building2Icon />,
               },
+              syncWithLocation: true,
               disableTelemetry: true,
               warnWhenUnsavedChanges: true,
               projectId: "acm5tN-f22iGa-ckgfSS",
