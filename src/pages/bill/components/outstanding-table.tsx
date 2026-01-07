@@ -45,7 +45,7 @@ export const OutstandingTable = ({
     if (!party) return null;
 
     return (
-        <div className="border rounded-md mt-4 h-[500px] overflow-y-scroll">
+        <div className="border rounded-md mt-4">
             <Table>
                 <TableHeader>
                     <TableRow>
