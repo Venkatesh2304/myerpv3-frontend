@@ -21,7 +21,7 @@ import type { CrudFilters } from "@refinedev/core";
 
 import { LoadingButton } from "@/components/ui/loading-button";
 import { dataProvider } from "@/lib/dataprovider";
-import { useNotification, useInvalidate } from "@refinedev/core";
+import { useNotification, useInvalidate, useNavigation } from "@refinedev/core";
 import {
   Dialog,
   DialogContent,
@@ -547,12 +547,12 @@ export const BankList = () => {
         cell: ({ getValue }) => getValue()?.toUpperCase() ?? "",
         size: 100,
       }),
-      columnHelper.display({
-        id: "actions",
-        header: "",
-        cell: ({ row }) => <EditButton recordItemId={row.original.id} />,
-        size: 50,
-      }),
+      // columnHelper.display({
+      //   id: "actions",
+      //   header: "",
+      //   cell: ({ row }) => <EditButton recordItemId={row.original.id} />,
+      //   size: 50,
+      // }),
     ];
   }, []);
 
@@ -572,6 +572,7 @@ export const BankList = () => {
       },
       pagination: {
         mode: "server",
+        pageSize: 20
       },
       queryOptions: {
         enabled: !!company?.id
@@ -579,6 +580,7 @@ export const BankList = () => {
     },
   });
   const { refineCore: { filters, setFilters } } = table;
+  const { edit: navigateEdit } = useNavigation();
 
 
   //Reset Hot key
@@ -628,6 +630,7 @@ export const BankList = () => {
     enableOnFormTags: false,
   });
 
+
   return (
     <ListView>
       <ListViewHeader title="" canCreate={false} >
@@ -640,7 +643,7 @@ export const BankList = () => {
         </div>
       </ListViewHeader>
       <BankFilters filters={filters} setFilters={setFilters} />
-      <DataTable table={table} />
+      <DataTable table={table} onRowEnter={(row) => navigateEdit("bankstatement", row.id)} />
     </ListView>
   );
 };

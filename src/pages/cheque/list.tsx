@@ -11,11 +11,14 @@ import { Label } from "@/components/ui/label";
 import type { Cheque } from "./types";
 import { DepositSlipButton } from "./components/deposit-slip-button";
 import { useCompany } from "@/providers/company-provider";
-import { CrudFilter } from "@refinedev/core";
+import { CrudFilter, useNavigation, useNotification } from "@refinedev/core";
+import { cn } from "@/lib/utils";
 
 export const ChequeList = () => {
   const [showOnlyDepositable, setShowOnlyDepositable] = React.useState(false);
   const { company } = useCompany();
+  const { open } = useNotification();
+  const { edit } = useNavigation();
   const columns = React.useMemo(() => {
     const columnHelper = createColumnHelper<Cheque>();
     return [
@@ -40,6 +43,9 @@ export const ChequeList = () => {
         header: "Party",
         enableSorting: true,
         size: 300,
+        cell: ({ row, getValue }) => (
+          <span className={cn("font-mono font-bold", !!row.original?.deposit_date ? "text-green-500" : "text-blue-500")}>{getValue()}</span>
+        ),
       }),
       columnHelper.accessor("amt", {
         id: "amt",
@@ -62,21 +68,7 @@ export const ChequeList = () => {
         enableSorting: true,
         cell: ({ getValue }) => formatDate(getValue()),
         size: 100
-      }),
-      columnHelper.display({
-        id: "actions",
-        header: "",
-        cell: ({ row }) => (
-          <div className="flex items-end">
-            <EditButton
-              className="rounded-full"
-              // hidden={!!row.original.bank_entry}
-              recordItemId={row.original.id}
-            />
-          </div>
-        ),
-        size: 100
-      }),
+      })
     ];
   }, []);
 
@@ -96,11 +88,24 @@ export const ChequeList = () => {
       filters: {
         permanent: filters,
       },
+      pagination: {
+        pageSize: 20
+      }
     },
     enableRowSelection: true
   });
 
-
+  const onRowEnter = (row: Cheque) => {
+    if (row.bank_entry) {
+      open?.({
+        type: "error",
+        message: `Cheque is already mapped to a bank entry ${row.bank_entry}`,
+      });
+      edit("bankstatement", row.bank_entry);
+    } else {
+      edit("cheque", row.id);
+    }
+  }
   return (
     <ListView>
       <ListViewHeader title="">
@@ -126,7 +131,7 @@ export const ChequeList = () => {
           />
         </div>
       </ListViewHeader>
-      <DataTable table={table} />
+      <DataTable table={table} onRowEnter={onRowEnter} />
     </ListView>
   );
 };

@@ -22,10 +22,12 @@ import { useHotkeys } from "react-hotkeys-hook";
 
 type DataTableProps<TData extends BaseRecord> = {
   table: UseTableReturnType<TData, HttpError>;
+  onRowEnter?: (row: TData) => void;
 };
 
 export function DataTable<TData extends BaseRecord>({
   table,
+  onRowEnter
 }: DataTableProps<TData>) {
   const {
     reactTable: { getHeaderGroups, getRowModel, getAllColumns },
@@ -62,10 +64,28 @@ export function DataTable<TData extends BaseRecord>({
     setActiveIndex((prev) => (prev > 0 ? prev - 1 : prev));
   });
 
+  // 3.Move Left (Previous Page)
+  useHotkeys("arrowleft", (e) => {
+    e.preventDefault();
+    setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
+  });
+
+  // 3. Move Right (Next Page)
+  useHotkeys("arrowright", (e) => {
+    e.preventDefault();
+    setCurrentPage((prev) => (prev < pageCount ? prev + 1 : prev));
+  });
+
   // 3. Toggle Selection (Space)
   useHotkeys("space", (e) => {
     e.preventDefault();
     getRowModel().rows[activeIndex].toggleSelected();
+  });
+
+  //On Enter
+  useHotkeys("enter", (e) => {
+    e.preventDefault();
+    onRowEnter?.(getRowModel().rows[activeIndex].original);
   });
 
   useEffect(() => {
@@ -92,6 +112,9 @@ export function DataTable<TData extends BaseRecord>({
     // Check when table data changes
     const timeoutId = setTimeout(checkOverflow, 100);
     table?.reactTable?.resetRowSelection();
+    if (currentPage > pageCount) {
+      setCurrentPage(1);
+    }
     setActiveIndex(0);
 
     return () => {
@@ -227,7 +250,10 @@ export function DataTable<TData extends BaseRecord>({
                 return (
                   <TableRow
                     key={row.original?.id ?? row.id}
-                    className={row.index === activeIndex ? "bg-accent shadow-[inset_4px_0_0_0_theme(colors.primary.DEFAULT)]" : ""}
+                    className={cn(row.index === activeIndex ? "bg-accent shadow-[inset_4px_0_0_0_theme(colors.primary.DEFAULT)]" : "", //hover:bg-transparent
+                      "hover:cursor-pointer"
+                    )}
+                    onClick={() => onRowEnter?.(row?.original)}
                   // data-state={(row.getIsSelected() || activeIndex === row.index) && "selected"}
                   >
                     {hasRowSelection && (
