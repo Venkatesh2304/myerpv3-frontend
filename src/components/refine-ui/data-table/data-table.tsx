@@ -267,6 +267,9 @@ export function DataTable<TData extends BaseRecord>({
                           background: isOverflowing.horizontal ? "var(--background)" : "",
                           zIndex: isOverflowing.horizontal ? 1 : 0,
                         }}
+                        onClick={(e) => {
+                          e.stopPropagation(); // This stops the 'click' from reaching the TableRow
+                        }}
                         className="pl-4"
                       >
                         <Checkbox

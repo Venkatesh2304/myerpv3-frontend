@@ -511,7 +511,7 @@ export const BankList = () => {
           cn("font-mono font-bold",
             {
               "not_saved": "text-gray-500",
-              "saved": "text-blue-500",
+              "not_pushed": "text-blue-500",
               "pushed": "text-green-500"
             }[row?.original?.status]
           )
