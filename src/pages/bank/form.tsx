@@ -54,11 +54,10 @@ const COLLECTION_TYPES = [
 export const BankForm = ({ footer }: { footer: ReactNode }) => {
   const notification = useNotificationProvider();
   const { company } = useCompany();
-  const [outstandingOpen, setOutstandingOpen] = useState(false);
   const form = useForm<Bank>({
     refineCoreProps: {},
     defaultValues: {
-      pushed: false,
+      status: "not_pushed",
       type: "",
       party_id: "",
       cheque_entry: null,
@@ -78,10 +77,10 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
   } = form;
 
   const type = watch("type");
-  const pushed = watch("pushed");
+  const status = watch("status");
   const partyId = watch("party_id");
   const bankId = id;
-  const isDisabled = pushed === true;
+  const isDisabled = status != "not_pushed";
   const back = useBack();
 
   useHotkeys("c", () => !isDisabled && setValue("type", "cheque"), {
@@ -93,7 +92,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
   useHotkeys("u", () => !isDisabled && setValue("type", "upi"), {
     enableOnFormTags: false,
   });
- 
+
   useHotkeys(["ctrl+s", "meta+s"], (e) => {
     e.preventDefault();
     handleSubmit(onSubmit as any)();
@@ -376,7 +375,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
           />
         )}
 
-        {pushed ? (
+        {isDisabled ? (
           <BankCollectionList bankId={bankId} />
         ) : type === "neft" ? (
           <CollectionEntries disabled={isDisabled} />
