@@ -237,7 +237,7 @@ export const PrintAction = ({ table }: { table: any }) => {
 
             <Dialog
                 open={showLoadingSheetDialog}
-                onOpenChange={setShowLoadingSheetDialog}
+                onOpenChange={(open) => { setShowLoadingSheetDialog(open); setSelectedParty(""); }}
             >
                 <DialogContent className="max-w-3xl">
                     <DialogHeader>
