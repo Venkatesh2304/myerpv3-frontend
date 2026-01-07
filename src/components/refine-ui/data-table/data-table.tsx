@@ -54,13 +54,11 @@ export function DataTable<TData extends BaseRecord>({
 
   // 1. Move Down
   useHotkeys("arrowdown", (e) => {
-    e.preventDefault();
     setActiveIndex((prev) => (prev < getRowModel().rows.length - 1 ? prev + 1 : prev));
   });
 
   // 2. Move Up
   useHotkeys("arrowup", (e) => {
-    e.preventDefault();
     setActiveIndex((prev) => (prev > 0 ? prev - 1 : prev));
   });
 
@@ -229,7 +227,7 @@ export function DataTable<TData extends BaseRecord>({
                   <TableRow
                     key={row.original?.id ?? row.id}
                     className={row.index === activeIndex ? "bg-accent shadow-[inset_4px_0_0_0_theme(colors.primary.DEFAULT)]" : ""}
-                    data-state={(row.getIsSelected() || activeIndex === row.index) && "selected"}
+                  // data-state={(row.getIsSelected() || activeIndex === row.index) && "selected"}
                   >
                     {hasRowSelection && (
                       <TableCell

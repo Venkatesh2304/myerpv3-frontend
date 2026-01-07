@@ -6,8 +6,18 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import type { PropsWithChildren } from "react";
 import { Sidebar } from "./sidebar";
+import { useHotkeys } from "react-hotkeys-hook";
+import { useBack } from "@refinedev/core";
 
 export function Layout({ children }: PropsWithChildren) {
+  const back = useBack();
+  useHotkeys("backspace", (e) => {
+    e.preventDefault();
+    back();
+  }, {
+    enableOnFormTags: false,
+  })
+
   return (
     <ThemeProvider>
       <SidebarProvider defaultOpen={false}>

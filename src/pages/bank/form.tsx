@@ -34,6 +34,7 @@ import { useCompany } from "@/providers/company-provider";
 import { dataProvider } from "@/lib/dataprovider";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { useHotkeys } from "react-hotkeys-hook";
+import { useBack } from "@refinedev/core";
 
 
 const BANKS = [
@@ -81,6 +82,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
   const partyId = watch("party_id");
   const bankId = id;
   const isDisabled = pushed === true;
+  const back = useBack();
 
   useHotkeys("c", () => !isDisabled && setValue("type", "cheque"), {
     enableOnFormTags: false,
@@ -91,6 +93,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
   useHotkeys("u", () => !isDisabled && setValue("type", "upi"), {
     enableOnFormTags: false,
   });
+ 
   useHotkeys(["ctrl+s", "meta+s"], (e) => {
     e.preventDefault();
     handleSubmit(onSubmit as any)();

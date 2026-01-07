@@ -5,7 +5,7 @@ import { ChequeForm } from "./form";
 export const ChequeEdit = () => {
   return (
     <EditView>
-      <EditViewHeader />
+      <EditViewHeader title="" />
       <ChequeForm footer={<EditViewFooter />} />
     </EditView>
   );
