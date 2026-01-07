@@ -92,6 +92,7 @@ export function DataTable<TData extends BaseRecord>({
     // Check when table data changes
     const timeoutId = setTimeout(checkOverflow, 100);
     table?.reactTable?.resetRowSelection();
+    setActiveIndex(0);
 
     return () => {
       window.removeEventListener("resize", checkOverflow);
