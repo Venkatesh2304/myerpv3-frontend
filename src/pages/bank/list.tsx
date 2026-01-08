@@ -41,6 +41,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { getFilterValue, handleFilterChange } from "@/lib/filters";
 import { useCompany } from "@/providers/company-provider";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const COLLECTION_TYPES = [
   { value: "all", label: "All" },
@@ -479,6 +480,7 @@ const BankSummaryDialog = () => {
   const [openDialog, setOpenDialog] = React.useState(false);
   const [fromDate, setFromDate] = React.useState<string | null>(null);
   const [toDate, setToDate] = React.useState<string | null>(null);
+  const [downloadCollection, setDownloadCollection] = React.useState<boolean>(false);
   const { open } = useNotification();
 
   const handleDownload = () => {
@@ -497,6 +499,7 @@ const BankSummaryDialog = () => {
       payload: {
         fromd: fromDate,
         tod: toDate,
+        download_collection: downloadCollection,
       },
     }).then(async (response) => {
       await dataProvider.custom({
@@ -557,6 +560,19 @@ const BankSummaryDialog = () => {
                 onChange={(date) => setToDate(date)}
               />
             </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="downloadCollection"
+              checked={downloadCollection}
+              onCheckedChange={(checked) => setDownloadCollection(!!checked)}
+            />
+            <Label
+              htmlFor="downloadCollection"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Fresh Download Ikea Collection
+            </Label>
           </div>
         </div>
         <DialogFooter>
