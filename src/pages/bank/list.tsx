@@ -498,17 +498,22 @@ const BankSummaryDialog = () => {
         fromd: fromDate,
         tod: toDate,
       },
-      meta: {
-        responseType: "blob",
-      },
-    }).then((response) => {
+    }).then(async (response) => {
+      await dataProvider.custom({
+        url: response.data.filepath,
+        method: "get",
+        meta: {
+          responseType: "blob",
+        },
+      }).then((res) => {
+        downloadFromResponse(res, `bank_summary_${fromDate}_to_${toDate}.xlsx`);
+      });
       open?.({
         type: "success",
         message: "Summary Downloaded",
         description: "Bank summary has been downloaded successfully.",
       });
       setOpenDialog(false);
-      return downloadFromResponse(response, `bank_summary_${fromDate}_to_${toDate}.xlsx`);
     }).catch((err) => {
       open?.({
         type: "error",
