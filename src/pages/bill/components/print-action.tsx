@@ -139,11 +139,17 @@ export const PrintAction = ({ table }: { table: any }) => {
                             iframe.src = url;
                             document.body.appendChild(iframe);
                             iframe.onload = () => {
-                                iframe.contentWindow?.print();
-                                setTimeout(() => {
+                                const frameWindow = iframe?.contentWindow;
+
+                                // 1. Tell the iframe what to do AFTER printing
+                                frameWindow.onafterprint = () => {
                                     document.body.removeChild(iframe);
                                     window.URL.revokeObjectURL(url);
-                                }, 1000);
+                                };
+
+                                // 2. Trigger the print
+                                frameWindow?.focus(); // Good practice for Chrome
+                                frameWindow?.print();
                             };
                             table.reactTable.resetRowSelection();
                         });
