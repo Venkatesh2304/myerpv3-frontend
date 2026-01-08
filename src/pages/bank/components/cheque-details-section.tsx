@@ -22,7 +22,10 @@ import type { Bank } from "@/pages/bank/types";
 import { useCompany } from "@/providers/company-provider";
 import { useDataProvider } from "@refinedev/core";
 import { useEffect, useState } from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
+import { Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigation } from "@refinedev/core";
 
 const CHEQUE_STATUS = [
     { value: "passed", label: "Passed" },
@@ -44,8 +47,14 @@ export const ChequeDetailsSection = ({
     const { control } = useFormContext<Bank>();
     const { company } = useCompany();
     const dataProvider = useDataProvider();
+    const { edit } = useNavigation();
     const [chequeOptions, setChequeOptions] = useState<ChequeOption[]>([]);
     const [isLoadingCheques, setIsLoadingCheques] = useState(false);
+
+    const chequeEntry = useWatch({
+        control,
+        name: "cheque_entry",
+    });
 
     useEffect(() => {
         if (bankId) {
@@ -85,9 +94,21 @@ export const ChequeDetailsSection = ({
                         rules={{ required: "Cheque number is required" }}
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="text-xs">
-                                    Cheque Number
-                                </FormLabel>
+                                <div className="flex items-center">
+                                    <FormLabel className="text-xs">
+                                        Cheque Number
+                                    </FormLabel>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 px-5"
+                                        disabled={!chequeEntry}
+                                        onClick={() => edit("cheque", chequeEntry)}
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                    </Button>
+                                </div>
                                 <Select
                                     onValueChange={(value) =>
                                         field.onChange(value ? parseInt(value) : null)

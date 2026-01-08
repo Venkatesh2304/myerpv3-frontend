@@ -382,7 +382,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
         )}
 
         {isDisabled ? (
-          (type in ["cheque", "neft"] ? <BankCollectionList bankId={bankId} /> : null)
+          (["cheque", "neft"].includes(type) ? <BankCollectionList bankId={bankId} /> : null)
         ) : type === "neft" ? (
           <CollectionEntries disabled={isDisabled} />
         ) : null}
