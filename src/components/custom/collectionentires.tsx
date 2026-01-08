@@ -122,7 +122,7 @@ const OutstandingDialog = ({ table, setValue, amt }: { table: UseTableReturnType
                         Load {table.reactTable.getSelectedRowModel().rows.length} Bills
                     </Button>
                 </div>
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-y-scroll">
                     <DataTable table={table} />
                 </div>
             </DialogContent>
