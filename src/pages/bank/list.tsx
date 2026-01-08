@@ -366,9 +366,8 @@ const PushCollectionButton = ({ table }: { table: any }) => {
       });
       table.reactTable.resetRowSelection();
       open?.({
-        type: "success",
-        message: "Collection Pushed",
-        description: "Selected collections have been pushed successfully.",
+        type: res?.data?.status == "success" ? "success" : "error",
+        message: ({ "success": "All Collections Pushed", "partial_success": "Some Collections Not Pushed" })[res?.data?.status],
       });
 
       invalidate({

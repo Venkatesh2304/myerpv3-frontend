@@ -5,6 +5,13 @@ export interface BankCollection {
   party: string;
 }
 
+export interface BankEvent {
+  type: string;
+  message: string;
+  by: string | null;
+  time: string;
+}
+
 export interface Bank {
   id: string;
   date: string;
@@ -19,4 +26,5 @@ export interface Bank {
   cheque_entry: string | null;
   cheque_status: string | null;
   collection: BankCollection[];
+  events?: BankEvent[];
 }

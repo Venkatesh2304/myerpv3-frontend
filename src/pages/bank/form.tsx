@@ -35,6 +35,8 @@ import { dataProvider } from "@/lib/dataprovider";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useBack } from "@refinedev/core";
+import { HistoryDialog } from "./components/history-dialog";
+
 
 
 const BANKS = [
@@ -62,7 +64,8 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
       party_id: "",
       cheque_entry: null,
       cheque_status: null,
-      collection: []
+      collection: [],
+      events: []
     },
     shouldUnregister: false,
   });
@@ -201,6 +204,9 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
               >
                 Auto Match
               </LoadingButton>
+            )}
+            {id && (
+              <HistoryDialog events={watch("events")} />
             )}
           </CardHeader>
           <CardContent className="space-y-4">
@@ -376,7 +382,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
         )}
 
         {isDisabled ? (
-          <BankCollectionList bankId={bankId} />
+          (type in ["cheque", "neft"] ? <BankCollectionList bankId={bankId} /> : null)
         ) : type === "neft" ? (
           <CollectionEntries disabled={isDisabled} />
         ) : null}
