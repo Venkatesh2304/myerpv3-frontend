@@ -514,7 +514,7 @@ export const BankList = () => {
               "pushed": "text-green-500",
               "not_applicable": "text-green-500"
             }[row?.original?.status],
-            row?.original?.company != company?.id && "text-pink-500"
+            (row?.original?.company && row?.original?.company != company?.id) && "text-pink-500"
           )
         }>{getValue()}</span>,
         size: 200,
