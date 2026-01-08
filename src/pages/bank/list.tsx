@@ -1,6 +1,6 @@
 import { useTable } from "@refinedev/react-table";
 import { createColumnHelper } from "@tanstack/react-table";
-import React from "react";
+import React, { useEffect } from "react";
 import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import { ListView, ListViewHeader } from "@/components/refine-ui/views/list-view";
 import { EditButton } from "@/components/refine-ui/buttons/edit";
@@ -173,7 +173,6 @@ const BankFilters: React.FC<{
     </Card>
   );
 };
-
 
 
 const MatchUpiButton = () => {
@@ -514,7 +513,8 @@ export const BankList = () => {
               "partially_pushed": "text-orange-500",
               "pushed": "text-green-500",
               "not_applicable": "text-green-500"
-            }[row?.original?.status]
+            }[row?.original?.status],
+            row?.original?.company != company?.id && "text-pink-500"
           )
         }>{getValue()}</span>,
         size: 200,
@@ -555,7 +555,7 @@ export const BankList = () => {
       //   size: 50,
       // }),
     ];
-  }, []);
+  }, [company]);
 
   const table = useTable({
     columns,
@@ -563,7 +563,7 @@ export const BankList = () => {
     refineCoreProps: {
       syncWithLocation: true,
       filters: {
-        initial: [
+        permanent: [
           {
             field: "company",
             operator: "eq",
@@ -582,7 +582,6 @@ export const BankList = () => {
   });
   const { refineCore: { filters, setFilters } } = table;
   const { edit: navigateEdit } = useNavigation();
-
 
   //Reset Hot key
   useHotkeys("r", () => setFilters(["date", "type", "bank", "status"].map((field) => ({

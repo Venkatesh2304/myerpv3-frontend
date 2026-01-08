@@ -18,8 +18,10 @@ interface BankCollectionItem {
 
 export const BankCollectionList = ({
     bankId,
+    disabled,
 }: {
     bankId: string | number | undefined;
+    disabled: boolean;
 }) => {
     const dataProvider = useDataProvider();
     const { open } = useNotification();
@@ -97,7 +99,7 @@ export const BankCollectionList = ({
                     variant="destructive"
                     size="sm"
                     onClick={async (e) => { e.preventDefault(); return handleUnpush(); }}
-                    disabled={isLoading}
+                    disabled={isLoading || disabled}
                 >
                     Unpush Bills
                 </LoadingButton>

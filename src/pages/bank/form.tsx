@@ -63,6 +63,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
       status: "not_pushed",
       type: "",
       party_id: "",
+      company: null,
       cheque_entry: null,
       cheque_status: null,
       collection: [],
@@ -84,7 +85,10 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
   const status = watch("status");
   const partyId = watch("party_id");
   const bankId = id;
-  const isDisabled = ["partially_pushed", "pushed"].includes(status);
+  const companyId = watch("company");
+  const isPushed = ["partially_pushed", "pushed"].includes(status);
+  const isOtherCompany = (companyId && (company?.id != companyId));
+  const isDisabled = isPushed || isOtherCompany;
   const back = useBack();
 
   useHotkeys("c", () => !isDisabled && setValue("type", "cheque"), {
@@ -131,6 +135,19 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
         type: "error",
         message: "Auto match failed",
         description: error?.response?.data?.error || "Something went wrong",
+      });
+    }
+  };
+
+  const handleUnsave = () => {
+    if (window.confirm("Are you sure you want to unsave this entry? This will reset the type, company, and collections.")) {
+      const values = form.getValues();
+      onFinish({
+        ...values,
+        type: null,
+        company: null,
+        cheque_entry: null,
+        collection: [],
       });
     }
   };
@@ -188,27 +205,39 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
     values = { ...values, company: company?.id }
     onFinish(values);
   }
-
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Bank Entry Details</CardTitle>
-            {type === "neft" && partyId && !isDisabled && (
-              <LoadingButton
-                type="button"
-                variant="secondary"
-                className="bg-orange-500 hover:bg-orange-600 text-white"
-                size="sm"
-                onClick={handleAutoMatch}
-              >
-                Auto Match
-              </LoadingButton>
-            )}
-            {id && (
-              <HistoryDialog events={watch("events")} />
-            )}
+            <div className="flex items-center gap-2">
+              {type === "neft" && partyId && !isDisabled && (
+                <LoadingButton
+                  type="button"
+                  variant="secondary"
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                  size="sm"
+                  onClick={handleAutoMatch}
+                >
+                  Auto Match
+                </LoadingButton>
+              )}
+              {id && (
+                <>
+                  {(!isPushed && type) && (<LoadingButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleUnsave}
+                  >
+                    Unsave
+                  </LoadingButton>
+                  )}
+                  <HistoryDialog events={watch("events")} />
+                </>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* First Row */}
@@ -382,13 +411,13 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
           />
         )}
 
-        {isDisabled ? (
-          (["cheque", "neft"].includes(type) ? <BankCollectionList bankId={bankId} /> : null)
+        {isPushed ? (
+          (["cheque", "neft"].includes(type) ? <BankCollectionList bankId={bankId} disabled={isOtherCompany} /> : null)
         ) : type === "neft" ? (
           <CollectionEntries disabled={isDisabled} />
         ) : null}
 
-        {footer}
+        {!isDisabled && footer}
       </form>
 
     </Form>
