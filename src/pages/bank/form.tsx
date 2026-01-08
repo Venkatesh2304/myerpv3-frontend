@@ -83,7 +83,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
   const status = watch("status");
   const partyId = watch("party_id");
   const bankId = id;
-  const isDisabled = ["partially_pushed", "pushed"].includes(status);
+  const isDisabled = (["neft", "cheque"]).includes(type) && ["partially_pushed", "pushed"].includes(status);
   const back = useBack();
 
   useHotkeys("c", () => !isDisabled && setValue("type", "cheque"), {
