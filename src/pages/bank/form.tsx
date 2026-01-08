@@ -51,6 +51,7 @@ const COLLECTION_TYPES = [
   { value: "neft", label: "NEFT" },
   { value: "upi", label: "UPI" },
   { value: "cash_deposit", label: "Cash Deposit" },
+  { value: "others", label: "Others" },
 ];
 
 export const BankForm = ({ footer }: { footer: ReactNode }) => {
