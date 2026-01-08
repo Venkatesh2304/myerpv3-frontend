@@ -474,6 +474,94 @@ const SmartMatchButton = ({ table }: { table: any }) => {
   );
 };
 
+
+const BankSummaryDialog = () => {
+  const [openDialog, setOpenDialog] = React.useState(false);
+  const [fromDate, setFromDate] = React.useState<string | null>(null);
+  const [toDate, setToDate] = React.useState<string | null>(null);
+  const { open } = useNotification();
+
+  const handleDownload = () => {
+    if (!fromDate || !toDate) {
+      open?.({
+        type: "error",
+        message: "Dates required",
+        description: "Please select both from and to dates.",
+      });
+      return Promise.resolve();
+    }
+
+    return dataProvider.custom({
+      url: "/bank_summary/",
+      method: "post",
+      payload: {
+        fromd: fromDate,
+        tod: toDate,
+      },
+      meta: {
+        responseType: "blob",
+      },
+    }).then((response) => {
+      open?.({
+        type: "success",
+        message: "Summary Downloaded",
+        description: "Bank summary has been downloaded successfully.",
+      });
+      setOpenDialog(false);
+      return downloadFromResponse(response, `bank_summary_${fromDate}_to_${toDate}.xlsx`);
+    }).catch((err) => {
+      open?.({
+        type: "error",
+        message: "Error downloading summary",
+        description: err?.response?.data?.error || err.message,
+      });
+    });
+  };
+
+  return (
+    <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+      <DialogTrigger asChild>
+        <Button variant="outline">Summary</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Bank Summary</DialogTitle>
+          <DialogDescription>
+            Select a date range to download the bank summary.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="fromDate" className="text-right">
+              From Date
+            </Label>
+            <div className="col-span-3">
+              <DatePicker
+                value={fromDate}
+                onChange={(date) => setFromDate(date)}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="toDate" className="text-right">
+              To Date
+            </Label>
+            <div className="col-span-3">
+              <DatePicker
+                value={toDate}
+                onChange={(date) => setToDate(date)}
+              />
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <LoadingButton onClick={handleDownload}>Download</LoadingButton>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export const BankList = () => {
   // const [filters, setFilters] = React.useState<CrudFilters>([]);
   const { company } = useCompany();
@@ -514,7 +602,7 @@ export const BankList = () => {
               "pushed": "text-green-500",
               "not_applicable": "text-green-500"
             }[row?.original?.status],
-            (row?.original?.company && row?.original?.company != company?.id) && "text-pink-500"
+            (row?.original?.company && row?.original?.company != company?.id) && "text-pink-200"
           )
         }>{getValue()}</span>,
         size: 200,
@@ -580,6 +668,7 @@ export const BankList = () => {
       },
     },
   });
+
   const { refineCore: { filters, setFilters } } = table;
   const { edit: navigateEdit } = useNavigation();
 
@@ -638,6 +727,7 @@ export const BankList = () => {
           <SmartMatchButton table={table} />
           <PushCollectionButton table={table} />
           <MatchUpiButton />
+          <BankSummaryDialog />
           <UploadStatementDialog />
           <RefreshBankButton />
         </div>
