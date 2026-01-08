@@ -512,7 +512,8 @@ export const BankList = () => {
               "not_saved": "text-gray-500",
               "not_pushed": "text-blue-500",
               "partially_pushed": "text-orange-500",
-              "pushed": "text-green-500"
+              "pushed": "text-green-500",
+              "not_applicable": "text-green-500"
             }[row?.original?.status]
           )
         }>{getValue()}</span>,
