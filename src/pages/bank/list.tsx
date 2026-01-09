@@ -223,9 +223,53 @@ const MatchUpiButton = () => {
 };
 
 const UploadStatementDialog = () => {
+  const StatsDialog = ({ open, onOpenChange, stats }: { open: boolean, onOpenChange: (open: boolean) => void, stats: any[] | null }) => {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Upload Summary</DialogTitle>
+            <DialogDescription>
+              Summary of transactions from the uploaded statement.
+            </DialogDescription>
+          </DialogHeader>
+          {stats && (
+            <div className="mt-4 border rounded-md">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="p-2 text-left font-medium">Type</th>
+                    <th className="p-2 text-right font-medium">Count</th>
+                    <th className="p-2 text-right font-medium">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.map((stat, index) => (
+                    <tr key={index} className="border-b last:border-0">
+                      <td className="p-2">{stat.type || "Unknown"}</td>
+                      <td className="p-2 text-right">{stat.count}</td>
+                      <td className="p-2 text-right">
+                        ₹{stat.total.toLocaleString("en-IN", { minimumFractionDigits: 0 })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => onOpenChange(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   const [openDialog, setOpenDialog] = React.useState(false);
   const [file, setFile] = React.useState<File | null>(null);
   const [bank, setBank] = React.useState<string>("sbi");
+  const [stats, setStats] = React.useState<any[] | null>(null);
+  const [showStatsDialog, setShowStatsDialog] = React.useState(false);
   const { open } = useNotification();
 
   const invalidate = useInvalidate();
@@ -268,7 +312,7 @@ const UploadStatementDialog = () => {
       url: "/bank_statement_upload/",
       method: "post",
       payload: formData,
-    }).then(() => {
+    }).then((res) => {
       open?.({
         type: "success",
         message: "Statement Uploaded",
@@ -276,7 +320,8 @@ const UploadStatementDialog = () => {
       });
       setOpenDialog(false);
       setFile(null);
-      setBank("");
+      setStats(res.data.stats);
+      setShowStatsDialog(true);
       invalidate({
         resource: "bankstatement",
         invalidates: ["list"],
@@ -291,50 +336,56 @@ const UploadStatementDialog = () => {
   };
 
   return (
-    <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-      <DialogTrigger asChild>
-        <Button variant="default">Upload Statement</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Upload Bank Statement</DialogTitle>
-          <DialogDescription>
-            Upload an Excel file containing the bank statement.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="bank" className="text-right">
-              Bank
-            </Label>
-            <Select value={bank} onValueChange={setBank}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select bank" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="kvb">KVB</SelectItem>
-                <SelectItem value="sbi">SBI</SelectItem>
-              </SelectContent>
-            </Select>
+    <>
+      <Dialog open={openDialog} onOpenChange={(open) => {
+        setOpenDialog(open);
+        if (open) setStats(null);
+      }}>
+        <DialogTrigger asChild>
+          <Button variant="default">Upload Statement</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Upload Bank Statement</DialogTitle>
+            <DialogDescription>
+              Upload an Excel file containing the bank statement.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="bank" className="text-right">
+                Bank
+              </Label>
+              <Select value={bank} onValueChange={setBank}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select bank" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="kvb">KVB</SelectItem>
+                  <SelectItem value="sbi">SBI</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="file" className="text-right">
+                File
+              </Label>
+              <Input
+                id="file"
+                type="file"
+                accept=".xlsx, .xls"
+                className="col-span-3"
+                onChange={handleFileChange}
+              />
+            </div>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="file" className="text-right">
-              File
-            </Label>
-            <Input
-              id="file"
-              type="file"
-              accept=".xlsx, .xls"
-              className="col-span-3"
-              onChange={handleFileChange}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <LoadingButton onClick={handleUpload}>Upload</LoadingButton>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <LoadingButton onClick={handleUpload}>Upload</LoadingButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <StatsDialog open={showStatsDialog} onOpenChange={setShowStatsDialog} stats={stats} />
+    </>
   );
 };
 
