@@ -1,6 +1,8 @@
 import { useTable } from "@refinedev/react-table";
 import { createColumnHelper } from "@tanstack/react-table";
 import React, { useEffect } from "react";
+import { format, subDays } from "date-fns";
+
 import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import { ListView, ListViewHeader } from "@/components/refine-ui/views/list-view";
 import { EditButton } from "@/components/refine-ui/buttons/edit";
@@ -529,8 +531,9 @@ const SmartMatchButton = ({ table }: { table: any }) => {
 
 const BankSummaryDialog = () => {
   const [openDialog, setOpenDialog] = React.useState(false);
-  const [fromDate, setFromDate] = React.useState<string | null>(null);
-  const [toDate, setToDate] = React.useState<string | null>(null);
+  const [fromDate, setFromDate] = React.useState<string | null>(format(subDays(new Date(), 3), "yyyy-MM-dd"));
+  const [toDate, setToDate] = React.useState<string | null>(format(new Date(), "yyyy-MM-dd"));
+
   const [downloadCollection, setDownloadCollection] = React.useState<boolean>(false);
   const { open } = useNotification();
 
