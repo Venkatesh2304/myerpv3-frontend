@@ -598,9 +598,10 @@ const BankSummaryDialog = () => {
               From Date
             </Label>
             <div className="col-span-3">
-              <DatePicker
-                value={fromDate}
-                onChange={(date) => setFromDate(date)}
+              <Input
+                type="date"
+                value={fromDate || ""}
+                onChange={(e) => setFromDate(e.target.value || null)}
               />
             </div>
           </div>
@@ -609,9 +610,10 @@ const BankSummaryDialog = () => {
               To Date
             </Label>
             <div className="col-span-3">
-              <DatePicker
-                value={toDate}
-                onChange={(date) => setToDate(date)}
+              <Input
+                type="date"
+                value={toDate || ""}
+                onChange={(e) => setToDate(e.target.value || null)}
               />
             </div>
           </div>
