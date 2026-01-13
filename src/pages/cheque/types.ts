@@ -17,4 +17,5 @@ export interface Cheque {
   collection: ChequeCollection[];
   party: string;
   bank_entry: string | null;
+  allow_diff?: boolean;
 }

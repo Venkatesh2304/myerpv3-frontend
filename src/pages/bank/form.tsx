@@ -36,6 +36,7 @@ import { LoadingButton } from "@/components/ui/loading-button";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useBack } from "@refinedev/core";
 import { HistoryDialog } from "./components/history-dialog";
+import { DifferenceConfirmationDialog } from "@/components/custom/difference-confirmation-dialog";
 
 
 
@@ -60,6 +61,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
   const { company } = useCompany();
   const form = useForm<Bank>({
     refineCoreProps: {
+      redirect: false,
       onMutationSuccess: () => {
         back();
       }
@@ -143,6 +145,19 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
     }
   };
 
+  const [diffDialog, setDiffDialog] = useState<{ open: boolean; values: Bank | null; difference: number }>({
+    open: false,
+    values: null,
+    difference: 0,
+  });
+
+  const handleDiffConfirm = () => {
+    if (diffDialog.values) {
+      onFinish(diffDialog.values);
+      setDiffDialog({ open: false, values: null, difference: 0 });
+    }
+  };
+
   const handleUnsave = () => {
     if (window.confirm("Are you sure you want to unsave this entry? This will reset the type, company, and collections.")) {
       const values = form.getValues();
@@ -162,20 +177,28 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
       const collections = values?.collection || [];
       const total = values?.amt || 0;
       const validation = validateCollectionEntries(total, collections, 50);
-      if (!validation.isValid) {
-        notification.open({
-          type: "error",
-          message: validation.message || "Validation failed",
+      if (values.allow_diff) {
+        setDiffDialog({
+          open: true,
+          values: { ...values, company: company?.id },
+          difference: validation.difference || 0,
         });
-
-        setError("root", {
-          type: "manual",
-          message: validation.message || "Validation failed",
-        });
-
         return;
       }
-    } else if (values.type === "cheque") {
+
+      notification.open({
+        type: "error",
+        message: validation.message || "Validation failed",
+      });
+
+      setError("root", {
+        type: "manual",
+        message: validation.message || "Validation failed",
+      });
+
+      return;
+    }
+    else if (values.type === "cheque") {
       if (!values.cheque_entry) {
         notification.open({
           type: "error",
@@ -423,7 +446,12 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
 
         {!isDisabled && footer}
       </form>
-
+      <DifferenceConfirmationDialog
+        open={diffDialog.open}
+        onOpenChange={(open) => setDiffDialog((prev) => ({ ...prev, open }))}
+        onConfirm={handleDiffConfirm}
+        difference={diffDialog.difference}
+      />
     </Form>
   );
 };

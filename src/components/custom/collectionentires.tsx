@@ -18,6 +18,7 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/custom/combobox";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Plus, Trash2 } from "lucide-react";
@@ -35,6 +36,7 @@ import { cn } from "@/lib/utils";
 export interface ValidationResult {
     isValid: boolean;
     message?: string;
+    difference?: number;
 }
 
 export const validateCollectionEntries = (
@@ -59,12 +61,13 @@ export const validateCollectionEntries = (
     );
 
     // Calculate difference
-    const difference = Math.abs(total - collectionSum);
+    const difference = total - collectionSum;
     // Check if difference is within threshold
-    if (difference > threshold) {
+    if (Math.abs(difference) > threshold) {
         return {
             isValid: false,
             message: `Collection amounts (₹${collectionSum.toLocaleString("en-IN")}) do not match cheque amount (₹${total.toLocaleString("en-IN")}). Difference: ₹${difference.toLocaleString("en-IN")}`,
+            difference: difference,
         };
     }
 
@@ -216,16 +219,38 @@ export const CollectionEntries = ({
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Collection Entries</CardTitle>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => append({ bill: "", party: "", balance: 0, amt: 0 })}
-                        disabled={disabled}
-                    >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Entry
-                    </Button>
+                    <div className="flex items-center gap-4">
+                        <FormField
+                            control={control}
+                            name="allow_diff"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-2">
+                                    <FormControl>
+                                        <Checkbox
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            disabled={disabled}
+                                        />
+                                    </FormControl>
+                                    <div className="space-y-1 leading-none">
+                                        <FormLabel>
+                                            Allow Difference
+                                        </FormLabel>
+                                    </div>
+                                </FormItem>
+                            )}
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => append({ bill: "", party: "", balance: 0, amt: 0 })}
+                            disabled={disabled}
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Entry
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
                     {fields.map((field, index) => (

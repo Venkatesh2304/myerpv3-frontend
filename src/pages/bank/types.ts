@@ -27,4 +27,5 @@ export interface Bank {
   cheque_status: string | null;
   collection: BankCollection[];
   events?: BankEvent[];
+  allow_diff?: boolean;
 }
