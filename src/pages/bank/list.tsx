@@ -456,9 +456,6 @@ const RefreshBankButton = () => {
     return dataProvider.custom({
       url: "/refresh_bank/",
       method: "post",
-      payload: {
-        company: company?.id,
-      },
     }).then(() => {
       open?.({
         type: "success",

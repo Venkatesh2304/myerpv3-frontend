@@ -77,11 +77,11 @@ export const EditViewHeader = ({
 
         <div className="flex items-center gap-2">
           {actionsSlot}
-          <RefreshButton
+          {/* <RefreshButton
             variant="outline"
             recordItemId={recordItemId}
             resource={resourceName}
-          />
+          /> */}
         </div>
       </div>
     </div>

@@ -56,9 +56,14 @@ const COLLECTION_TYPES = [
 
 export const BankForm = ({ footer }: { footer: ReactNode }) => {
   const notification = useNotificationProvider();
+  const back = useBack();
   const { company } = useCompany();
   const form = useForm<Bank>({
-    refineCoreProps: {},
+    refineCoreProps: {
+      onMutationSuccess: () => {
+        back();
+      }
+    },
     defaultValues: {
       status: "not_pushed",
       type: "",
@@ -89,7 +94,6 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
   const isPushed = ["partially_pushed", "pushed"].includes(status);
   const isOtherCompany = (companyId && (company?.id != companyId));
   const isDisabled = isPushed || isOtherCompany;
-  const back = useBack();
 
   useHotkeys("c", () => !isDisabled && setValue("type", "cheque"), {
     enableOnFormTags: false,
