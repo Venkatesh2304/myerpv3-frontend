@@ -177,26 +177,27 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
       const collections = values?.collection || [];
       const total = values?.amt || 0;
       const validation = validateCollectionEntries(total, collections, 50);
-      if (values.allow_diff) {
-        setDiffDialog({
-          open: true,
-          values: { ...values, company: company?.id },
-          difference: validation.difference || 0,
-        });
-        return;
+      if (!validation?.isValid) {
+        if (values.allow_diff) {
+          setDiffDialog({
+            open: true,
+            values: { ...values, company: company?.id },
+            difference: validation.difference || 0,
+          });
+          return;
+        }
+        else {
+          notification.open({
+            type: "error",
+            message: validation.message || "Validation failed",
+          });
+
+          setError("root", {
+            type: "manual",
+            message: validation.message || "Validation failed",
+          });
+        }
       }
-
-      notification.open({
-        type: "error",
-        message: validation.message || "Validation failed",
-      });
-
-      setError("root", {
-        type: "manual",
-        message: validation.message || "Validation failed",
-      });
-
-      return;
     }
     else if (values.type === "cheque") {
       if (!values.cheque_entry) {
