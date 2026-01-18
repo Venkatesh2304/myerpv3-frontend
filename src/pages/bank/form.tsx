@@ -196,6 +196,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
             type: "manual",
             message: validation.message || "Validation failed",
           });
+          return;
         }
       }
     }
