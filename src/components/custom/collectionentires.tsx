@@ -1,5 +1,5 @@
 
-import { useFieldArray, useFormContext } from "react-hook-form";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useList, useDataProvider, BaseRecord, HttpError } from "@refinedev/core";
 import { useTable, UseTableReturnType } from "@refinedev/react-table";
 import { useMemo, useState } from "react";
@@ -214,6 +214,16 @@ export const CollectionEntries = ({
         }
     };
 
+    const collectionValues = useWatch({
+        control,
+        name: "collection",
+        defaultValue: [],
+    });
+
+    const totalCollection = useMemo(() => {
+        return (collectionValues || []).reduce((sum: number, field: any) => sum + (Number(field.amt) || 0), 0);
+    }, [collectionValues]);
+
     return (
         <>
             <Card>
@@ -363,6 +373,27 @@ export const CollectionEntries = ({
                         </div>
                     ))}
                 </CardContent>
+                <div className="p-4 border-t bg-muted/20">
+                    <div className="flex justify-end gap-8 text-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground font-medium">Total:</span>
+                            <span className="font-bold">
+                                ₹{totalCollection.toLocaleString("en-IN")}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground font-medium">Balance:</span>
+                            <span className={cn(
+                                "font-bold",
+                                (amt - totalCollection) > 0
+                                    ? "text-red-500"
+                                    : "text-green-500"
+                            )}>
+                                ₹{(amt - totalCollection).toLocaleString("en-IN")}
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </Card>
             {partyId && <OutstandingDialog table={table} setValue={setValue} amt={amt} />}
         </>
