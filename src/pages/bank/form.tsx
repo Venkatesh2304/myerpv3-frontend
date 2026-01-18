@@ -362,7 +362,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
               <FormField
                 control={control}
                 name="party_id"
-                rules={{ required: type == "neft" ? "Party is required" : false }}
+                // rules={{ required: type == "neft" ? "Party is required" : false }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">Party</FormLabel>
