@@ -147,7 +147,7 @@ export const ChequeList = () => {
         permanent: permanentFilters,
       },
       pagination: {
-        pageSize: 20
+        pageSize: 50
       }
     },
     enableRowSelection: true
