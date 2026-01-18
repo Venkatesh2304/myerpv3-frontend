@@ -11,8 +11,63 @@ import { Label } from "@/components/ui/label";
 import type { Cheque } from "./types";
 import { DepositSlipButton } from "./components/deposit-slip-button";
 import { useCompany } from "@/providers/company-provider";
-import { CrudFilter, useNavigation, useNotification } from "@refinedev/core";
+import { CrudFilter, CrudFilters, useNavigation, useNotification } from "@refinedev/core";
 import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { DatePicker } from "@/components/custom/date-picker";
+import { ResourceCombobox } from "@/components/custom/resource-combobox";
+import { getFilterValue, handleFilterChange } from "@/lib/filters";
+
+const ChequeFilters: React.FC<{
+  filters: CrudFilters;
+  setFilters: (filters: CrudFilters) => void;
+}> = ({ filters, setFilters }) => {
+  const { company } = useCompany();
+
+  const resetFilters = () => {
+    setFilters([
+      { field: "deposit_date", operator: "eq", value: null },
+      { field: "party", operator: "eq", value: null },
+    ]);
+  };
+
+  return (
+    <Card className="mb-2 pt-4 pb-4">
+      <CardContent>
+        <div className="grid grid-cols-4 gap-4 items-end">
+          <div className="flex flex-col space-y-2">
+            <Label className="text-xs">Deposit Date</Label>
+            <DatePicker
+              value={getFilterValue(filters, "deposit_date", null)}
+              onChange={(date) => handleFilterChange(setFilters, "deposit_date", date)}
+            />
+          </div>
+          <div className="flex flex-col space-y-2">
+            <Label className="text-xs">Party</Label>
+            <ResourceCombobox
+              resource="party"
+              labelKey="label"
+              valueKey="value"
+              minSearchLength={3}
+              value={getFilterValue(filters, "party", null)}
+              onValueChange={(value) => handleFilterChange(setFilters, "party", value)}
+              filters={[
+                {
+                  field: "company",
+                  operator: "eq",
+                  value: company?.id,
+                }
+              ]}
+            />
+          </div>
+          <Button type="button" variant="outline" onClick={resetFilters}>
+            Reset
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export const ChequeList = () => {
   const [showOnlyDepositable, setShowOnlyDepositable] = React.useState(false);
@@ -44,7 +99,10 @@ export const ChequeList = () => {
         enableSorting: true,
         size: 300,
         cell: ({ row, getValue }) => (
-          <span className={cn("font-mono font-bold", !!row.original?.deposit_date ? "text-green-500" : "text-blue-500")}>{getValue()}</span>
+          <span className={cn("font-mono font-bold",
+            !!row.original.bank_entry ? "text-green-500" :
+              (!!row.original?.deposit_date ? "text-blue-500" : "text-gray-500")
+          )}>{getValue()}</span>
         ),
       }),
       columnHelper.accessor("amt", {
@@ -72,7 +130,7 @@ export const ChequeList = () => {
     ];
   }, []);
 
-  const filters: CrudFilter[] = React.useMemo(() => {
+  const permanentFilters: CrudFilter[] = React.useMemo(() => {
     const filters: CrudFilter[] = [
       { field: "company", operator: "eq", value: company?.id },
     ];
@@ -86,7 +144,7 @@ export const ChequeList = () => {
     columns,
     refineCoreProps: {
       filters: {
-        permanent: filters,
+        permanent: permanentFilters,
       },
       pagination: {
         pageSize: 20
@@ -94,6 +152,8 @@ export const ChequeList = () => {
     },
     enableRowSelection: true
   });
+
+  const { refineCore: { filters, setFilters } } = table;
 
   const onRowEnter = (row: Cheque) => {
     if (row.bank_entry) {
@@ -131,6 +191,7 @@ export const ChequeList = () => {
           />
         </div>
       </ListViewHeader>
+      <ChequeFilters filters={filters} setFilters={setFilters} />
       <DataTable table={table} onRowEnter={onRowEnter} />
     </ListView>
   );

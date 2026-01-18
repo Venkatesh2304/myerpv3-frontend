@@ -51,11 +51,10 @@ export function Combobox({
   const [search, setSearch] = useState("");
 
   const shouldShowOptions = search.length >= minSearchLength;
-
   const filteredOptions = shouldShowOptions
     ? options.filter((option) =>
-        option.label.toLowerCase().includes(search.toLowerCase())
-      )
+      option?.label?.toLowerCase()?.includes(search.toLowerCase())
+    )
     : [];
 
   const selectedOption = options.find((option) => option.value === value);

@@ -89,7 +89,7 @@ const BankFilters: React.FC<{
 
 
   const resetFilters = () => {
-    setFilters(["date", "type", "bank", "status"].map((field) => ({
+    setFilters(["fromd", "tod", "type", "bank", "status"].map((field) => ({
       field,
       operator: "eq",
       value: null,
@@ -99,13 +99,23 @@ const BankFilters: React.FC<{
   return (
     <Card className="mb-2 pt-4 pb-4">
       <CardContent className="">
-        <div className="grid grid-cols-5 gap-8 items-end">
+        <div className="grid grid-cols-6 gap-4 items-end">
           <div className="flex flex-col space-y-2">
-            <Label className="text-xs">Date</Label>
+            <Label className="text-xs">From Date</Label>
 
             <DatePicker
-              value={getFilterValue(filters, "date", null)}
-              onChange={(date) => handleFilterChange(setFilters, "date", date)}
+              value={getFilterValue(filters, "fromd", null)}
+              onChange={(date) => handleFilterChange(setFilters, "fromd", date)}
+            />
+
+          </div>
+
+          <div className="flex flex-col space-y-2">
+            <Label className="text-xs">To Date</Label>
+
+            <DatePicker
+              value={getFilterValue(filters, "tod", null)}
+              onChange={(date) => handleFilterChange(setFilters, "tod", date)}
             />
 
           </div>
@@ -747,7 +757,7 @@ export const BankList = () => {
   const { edit: navigateEdit } = useNavigation();
 
   //Reset Hot key
-  useHotkeys("r", () => setFilters(["date", "type", "bank", "status"].map((field) => ({
+  useHotkeys("r", () => setFilters(["fromd", "tod", "type", "bank", "status"].map((field) => ({
     field,
     operator: "eq",
     value: null,
@@ -758,7 +768,12 @@ export const BankList = () => {
 
   useHotkeys("t", () => setFilters([
     {
-      field: "date",
+      field: "fromd",
+      operator: "eq",
+      value: new Date().toISOString().split("T")[0],
+    },
+    {
+      field: "tod",
       operator: "eq",
       value: new Date().toISOString().split("T")[0],
     }
