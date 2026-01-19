@@ -23,11 +23,12 @@ import { BillList } from "@/pages/bill";
 import { BillingList } from "@/pages/billing";
 import { dataProvider } from "./lib/dataprovider";
 import { authProvider } from "./lib/authprovider";
-import { BookOpenTextIcon, LandmarkIcon, PrinterIcon, ScrollTextIcon, Building2Icon } from "lucide-react";
+import { BookOpenTextIcon, LandmarkIcon, PrinterIcon, ScrollTextIcon, Building2Icon, SettingsIcon } from "lucide-react";
 import { Login } from "./pages/login";
 import { CompanyProvider, useCompany } from "./providers/company-provider";
 import { useEffect } from "react";
 import { CompanyRouteWrapper } from "./components/company-route-wrapper";
+import { SettingsPage } from "./pages/settings";
 function App() {
   return (
     <BrowserRouter>
@@ -75,6 +76,14 @@ function App() {
                   icon: <LandmarkIcon />
                 },
               },
+              {
+                name: "settings",
+                list: "/settings",
+                meta: {
+                  label: "Settings",
+                  icon: <SettingsIcon />
+                },
+              },
 
             ]}
             options={{
@@ -119,6 +128,9 @@ function App() {
                 </Route>
                 <Route path="/billing">
                   <Route index element={<CompanyRouteWrapper Component={BillingList} />} />
+                </Route>
+                <Route path="/settings">
+                  <Route index element={<CompanyRouteWrapper Component={SettingsPage} />} />
                 </Route>
                 <Route path="*" element={<ErrorComponent />} />
               </Route>
