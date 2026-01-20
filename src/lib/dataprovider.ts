@@ -14,7 +14,6 @@ export const httpClient = axios.create({
     withCredentials: true
 });
 
-console.log("Setting up Interceptors..."); // Does this show up?
 httpClient.interceptors.request.use((config) => {
     const token = sessionStorage.getItem("accessToken");
     if (token) {

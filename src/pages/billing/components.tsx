@@ -65,7 +65,7 @@ export const BillingControls: React.FC<BillingControlsProps> = ({ form, onGetOrd
     const [stopBillingDialogOpen, setStopBillingDialogOpen] = React.useState(false);
 
     const { result: { data: stopBillingData }, query: { refetch: refetchStopBilling } } = useCustom<StopBillingResponse>({
-        url: '/stop_billing',
+        url: '/stop_billing/',
         method: 'get',
         config: {
             query: { company: company?.id },

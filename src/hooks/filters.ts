@@ -39,7 +39,6 @@ export const useFilters = ({
       }
 
       setFilters((prevFilters: CrudFilters) => {
-        console.log("Setting Filters : ", newFilters);
         if (formToFilters) {
           return newFilters;
         }

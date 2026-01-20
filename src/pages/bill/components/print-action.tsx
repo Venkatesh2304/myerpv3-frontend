@@ -156,7 +156,6 @@ export const PrintAction = ({ table }: { table: any }) => {
                 }
             })
             .catch((err) => {
-                console.log(err)
                 open?.({
                     type: "error",
                     message: "Error printing bills",

@@ -44,6 +44,8 @@ import { getFilterValue, handleFilterChange } from "@/lib/filters";
 import { useCompany } from "@/providers/company-provider";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ResourceCombobox } from "@/components/custom/resource-combobox";
+import { DebouncedInput } from "@/components/ui/debounced-input";
 
 const COLLECTION_TYPES = [
   { value: "all", label: "All" },
@@ -89,7 +91,7 @@ const BankFilters: React.FC<{
 
 
   const resetFilters = () => {
-    setFilters(["fromd", "tod", "type", "bank", "status"].map((field) => ({
+    setFilters(["fromd", "tod", "type", "bank", "status", "amt", "party"].map((field) => ({
       field,
       operator: "eq",
       value: null,
@@ -99,13 +101,18 @@ const BankFilters: React.FC<{
   return (
     <Card className="mb-2 pt-4 pb-4">
       <CardContent className="">
-        <div className="grid grid-cols-6 gap-4 items-end">
+        <div className="grid grid-cols-8 gap-4 items-end">
           <div className="flex flex-col space-y-2">
             <Label className="text-xs">From Date</Label>
 
             <DatePicker
               value={getFilterValue(filters, "fromd", null)}
-              onChange={(date) => handleFilterChange(setFilters, "fromd", date)}
+              onChange={(date) => {
+                handleFilterChange(setFilters, "fromd", date);
+                if (!getFilterValue(filters, "tod", null)) {
+                  handleFilterChange(setFilters, "tod", date);
+                }
+              }}
             />
 
           </div>
@@ -115,7 +122,12 @@ const BankFilters: React.FC<{
 
             <DatePicker
               value={getFilterValue(filters, "tod", null)}
-              onChange={(date) => handleFilterChange(setFilters, "tod", date)}
+              onChange={(date) => {
+                handleFilterChange(setFilters, "tod", date);
+                if (!getFilterValue(filters, "fromd", null)) {
+                  handleFilterChange(setFilters, "fromd", date);
+                }
+              }}
             />
 
           </div>
@@ -139,6 +151,7 @@ const BankFilters: React.FC<{
             </Select>
           </div>
 
+          {/* 
           <div className="flex flex-col space-y-2">
             <Label className="text-xs">Bank</Label>
             <Select
@@ -157,7 +170,36 @@ const BankFilters: React.FC<{
                 ))}
               </SelectContent>
             </Select>
+          </div> */}
+
+          <div className="flex flex-col space-y-2">
+            <Label className="text-xs">Amount</Label>
+            <DebouncedInput
+              value={getFilterValue(filters, "amt", "")}
+              onChange={(value) => handleFilterChange(setFilters, "amt", value)}
+              placeholder="Amount"
+            />
           </div>
+
+          <div className="flex flex-col space-y-2 col-span-2">
+            <Label className="text-xs">Party</Label>
+            <ResourceCombobox
+              resource="party"
+              labelKey="label"
+              valueKey="value"
+              minSearchLength={3}
+              value={getFilterValue(filters, "party", null)}
+              onValueChange={(value) => handleFilterChange(setFilters, "party", value)}
+              filters={[
+                {
+                  field: "company",
+                  operator: "eq",
+                  value: company?.id,
+                }
+              ]}
+            />
+          </div>
+
 
           <div className="flex flex-col space-y-2">
             <Label className="text-xs">Status</Label>
@@ -757,7 +799,7 @@ export const BankList = () => {
   const { edit: navigateEdit } = useNavigation();
 
   //Reset Hot key
-  useHotkeys("r", () => setFilters(["fromd", "tod", "type", "bank", "status"].map((field) => ({
+  useHotkeys("r", () => setFilters(["fromd", "tod", "type", "bank", "status", "amt", "party"].map((field) => ({
     field,
     operator: "eq",
     value: null,

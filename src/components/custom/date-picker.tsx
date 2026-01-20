@@ -35,7 +35,6 @@ export function DatePicker({
             : value
         : undefined;
 
-    console.log(dateValue);
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
