@@ -19,10 +19,11 @@ export const ChequeForm = ({ footer }: ChequeFormProps) => {
     refineCoreProps: {},
   });
   const {
-    refineCore: { onFinish },
+    refineCore: { onFinish, id },
     handleSubmit,
     setError,
   } = form;
+
 
   const [diffDialog, setDiffDialog] = useState<{ open: boolean; values: Cheque | null; difference: number }>({
     open: false,
@@ -36,6 +37,7 @@ export const ChequeForm = ({ footer }: ChequeFormProps) => {
       setDiffDialog({ open: false, values: null, difference: 0 });
     }
   };
+
 
   function onSubmit(values: Cheque) {
     const collections = values?.collection || [];
@@ -70,7 +72,7 @@ export const ChequeForm = ({ footer }: ChequeFormProps) => {
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-6">
-        <ChequeDetailsCard />
+        <ChequeDetailsCard chequeId={id} />
         <CollectionEntries />
         {/* Render footer inside form */}
         {footer}

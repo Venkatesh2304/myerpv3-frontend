@@ -230,52 +230,6 @@ const BankFilters: React.FC<{
 };
 
 
-const MatchUpiButton = () => {
-  const { open } = useNotification();
-  const { company } = useCompany();
-
-  const invalidate = useInvalidate();
-
-  const handleMatchUpi = () => {
-    return dataProvider.custom({
-      url: "/match_upi/",
-      method: "post",
-      payload: {
-        company: company?.id,
-      },
-      meta: {
-        responseType: "blob",
-      },
-    }).then((response) => {
-      open?.({
-        type: "success",
-        message: "UPI Matched",
-        description: "UPI transactions have been matched successfully.",
-      });
-      invalidate({
-        resource: "bankstatement",
-        invalidates: ["list"],
-      });
-      return downloadFromResponse(response, "match_upi.xlsx");
-    }).catch((err) => {
-      open?.({
-        type: "error",
-        message: "Error matching UPI",
-        description: err.message,
-      });
-    });
-  };
-
-  return (
-    <LoadingButton
-      variant="default"
-      onClick={handleMatchUpi}
-    >
-      Match UPI
-    </LoadingButton>
-  );
-};
-
 const UploadStatementDialog = () => {
   const StatsDialog = ({ open, onOpenChange, stats }: { open: boolean, onOpenChange: (open: boolean) => void, stats: any[] | null }) => {
     return (
@@ -857,7 +811,6 @@ export const BankList = () => {
         <div className="flex items-center gap-4">
           <SmartMatchButton table={table} />
           <PushCollectionButton table={table} />
-          <MatchUpiButton />
           <BankSummaryDialog />
           <UploadStatementDialog />
           <RefreshBankButton />

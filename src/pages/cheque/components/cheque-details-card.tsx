@@ -23,6 +23,9 @@ import { ResourceCombobox } from "@/components/custom/resource-combobox";
 import { CurrencyInput } from "@/components/custom/currency-input";
 import { useFormContext } from "react-hook-form";
 import { useCompany } from "@/providers/company-provider";
+import { useNotificationProvider } from "@/components/refine-ui/notification/use-notification-provider";
+import { dataProvider } from "@/lib/dataprovider";
+import { LoadingButton } from "@/components/ui/loading-button";
 
 const BANKS = [
     "KVB 650",
@@ -45,13 +48,60 @@ const BANKS = [
     "PGB",
 ];
 
-export const ChequeDetailsCard = () => {
-    const { control } = useFormContext();
+export const ChequeDetailsCard = ({ chequeId }) => {
+    const { control, setValue, watch } = useFormContext();
+    const notification = useNotificationProvider();
     const { company } = useCompany();
+    const partyId = watch("party_id");
+    const amt = watch("amt");
+
+    const handleAutoMatch = async () => {
+        if (!partyId || (!amt && !chequeId)) return;
+
+        try {
+            const response = await dataProvider.custom({
+                url: "/match_outstanding/",
+                method: "post",
+                payload: {
+                    company: company?.id,
+                    party_id: partyId,
+                    amt: amt ? parseFloat(amt) : null,
+                    cheque_id: chequeId ? parseInt(chequeId, 10) : null,
+                },
+            });
+
+            if (response.data.status === "success") {
+                setValue("collection", response.data.matched_outstanding);
+                notification.open({
+                    type: "success",
+                    message: "Auto match successful",
+                    description: `Matched ${response.data.matched_outstanding.length} invoices.`,
+                });
+            }
+        } catch (error: any) {
+            notification.open({
+                type: "error",
+                message: "Auto match failed",
+                description: error?.response?.data?.error || "Something went wrong",
+            });
+        }
+    };
+
     return (
         <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle>Cheque Details</CardTitle>
+                {partyId && amt && (
+                    <LoadingButton
+                        type="button"
+                        variant="secondary"
+                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                        size="sm"
+                        onClick={handleAutoMatch}
+                    >
+                        Auto Match
+                    </LoadingButton>
+                )}
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_2.67fr_1fr] gap-4">

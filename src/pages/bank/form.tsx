@@ -119,7 +119,7 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
 
     try {
       const response = await dataProvider.custom({
-        url: "/match_neft/",
+        url: "/match_outstanding/",
         method: "post",
         payload: {
           company: company?.id,
