@@ -33,7 +33,7 @@ function App() {
   return (
     <BrowserRouter>
       <RefineKbarProvider>
-        <ThemeProvider>
+        <ThemeProvider defaultTheme="light">
           <Refine
             dataProvider={dataProvider}
             notificationProvider={useNotificationProvider()}
