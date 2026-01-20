@@ -19,7 +19,7 @@ export function Layout({ children }: PropsWithChildren) {
   })
 
   return (
-    <ThemeProvider>
+    <ThemeProvider defaultTheme="light">
       <SidebarProvider defaultOpen={false}>
         <Sidebar />
         <SidebarInset>
