@@ -11,7 +11,8 @@ export const authProvider: AuthProvider = {
                 withCredentials: true
             }
         }).then((res) => {
-            sessionStorage.setItem("username", res.data?.user?.username);
+            sessionStorage.setItem("username", username);
+            sessionStorage.setItem("accessToken", res.data?.access);
             return {
                 success: true,
                 redirectTo: "/billing"
@@ -46,5 +47,24 @@ export const authProvider: AuthProvider = {
             fullName: sessionStorage.getItem("username"),
             avatar: "",
         };
+    },
+    logout: async () => {
+        sessionStorage.removeItem("username");
+        sessionStorage.removeItem("accessToken");
+        sessionStorage.removeItem("selectedCompanyId");
+        return {
+            success: true,
+            redirectTo: "/login",
+        };
+    },
+    onError: async (error) => {
+        if (error.response.status === 401 || error.response.status === 403) {
+            return {
+                logout: true,
+                redirectTo: "/login",
+                error: new Error("Session expired. Please login again."),
+            };
+        }
+        return { logout: false };
     },
 };
