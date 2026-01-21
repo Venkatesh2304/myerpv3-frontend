@@ -15,6 +15,7 @@ export interface Order {
     allow_order: boolean;
     order_category: 'normal' | 'partial' | 'less_than_config';
     warning?: string;
+    is_cheque_pending: boolean;
 }
 
 export interface OrderProduct {

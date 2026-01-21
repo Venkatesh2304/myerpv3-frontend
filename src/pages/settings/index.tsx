@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Save } from "lucide-react";
 import { dataProvider } from "@/lib/dataprovider";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { CompanySettingsCard } from "./company-settings-card";
 
 type UserSession = {
     id: number;
@@ -105,8 +106,8 @@ export const SettingsPage = () => {
     const keys = Object.keys(sessions);
 
     return (
-        <div className="p-4 max-w-2xl mx-auto">
-            <Card>
+        <div className="p-4 gap-20 mx-auto flex">
+            <Card className="min-w-md">
                 <CardHeader>
                     <CardTitle>Account Settings</CardTitle>
                 </CardHeader>
@@ -153,6 +154,8 @@ export const SettingsPage = () => {
                     )}
                 </CardContent>
             </Card>
-        </div>
+
+            <CompanySettingsCard />
+        </div >
     );
 };

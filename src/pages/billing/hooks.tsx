@@ -81,7 +81,7 @@ export const useOrdersTable = (data: Order[], onEdit: (orderNo: string) => void,
                 header: "Party", size: 250,
                 cell: ({ row }) => (
                     <div
-                        className="cursor-pointer"
+                        className={cn(row?.original?.is_cheque_pending ? "text-orange-500" : "", "cursor-pointer")}
                         onClick={() => onPartyClick(String(row.original.party_id), row.original.beat)}
                     >
                         {row.original.party}
