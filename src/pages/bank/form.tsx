@@ -359,36 +359,38 @@ export const BankForm = ({ footer }: { footer: ReactNode }) => {
                 )}
               />
 
-              <FormField
-                control={control}
-                name="party_id"
-                // rules={{ required: type == "neft" ? "Party is required" : false }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">Party</FormLabel>
-                    <FormControl>
-                      <ResourceCombobox
-                        resource="party"
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder="Select party"
-                        minSearchLength={3}
-                        labelKey="label"
-                        valueKey="value"
-                        disabled={isDisabled}
-                        filters={[
-                          {
-                            field: "company",
-                            operator: "eq",
-                            value: company?.id,
-                          },
-                        ]}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {type === "neft" && (
+                <FormField
+                  control={control}
+                  name="party_id"
+                  // rules={{ required: type == "neft" ? "Party is required" : false }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Party</FormLabel>
+                      <FormControl>
+                        <ResourceCombobox
+                          resource="party"
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Select party"
+                          minSearchLength={3}
+                          labelKey="label"
+                          valueKey="value"
+                          disabled={isDisabled}
+                          filters={[
+                            {
+                              field: "company",
+                              operator: "eq",
+                              value: company?.id,
+                            },
+                          ]}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

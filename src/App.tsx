@@ -21,9 +21,10 @@ import { ChequeCreate } from "./pages/cheque/create";
 import { BankList, BankEdit } from "@/pages/bank";
 import { BillList } from "@/pages/bill";
 import { BillingList } from "@/pages/billing";
+import { ReportsList } from "@/pages/reports/list";
 import { dataProvider } from "./lib/dataprovider";
 import { authProvider } from "./lib/authprovider";
-import { BookOpenTextIcon, LandmarkIcon, PrinterIcon, ScrollTextIcon, Building2Icon, SettingsIcon } from "lucide-react";
+import { BookOpenTextIcon, LandmarkIcon, PrinterIcon, ScrollTextIcon, Building2Icon, SettingsIcon, FileTextIcon } from "lucide-react";
 import { Login } from "./pages/login";
 import { CompanyProvider, useCompany } from "./providers/company-provider";
 import { useEffect } from "react";
@@ -84,6 +85,14 @@ function App() {
                   icon: <SettingsIcon />
                 },
               },
+              {
+                name: "reports",
+                list: "/reports",
+                meta: {
+                  label: "Reports",
+                  icon: <FileTextIcon />
+                },
+              },
 
             ]}
             options={{
@@ -131,6 +140,9 @@ function App() {
                 </Route>
                 <Route path="/settings">
                   <Route index element={<CompanyRouteWrapper Component={SettingsPage} />} />
+                </Route>
+                <Route path="/reports">
+                  <Route index element={<CompanyRouteWrapper Component={ReportsList} />} />
                 </Route>
                 <Route path="*" element={<ErrorComponent />} />
               </Route>

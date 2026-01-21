@@ -1,3 +1,5 @@
+import { dataProvider } from "@/lib/dataprovider";
+
 /**
  * Downloads a file from a blob with filename extraction from content-disposition header
  * @param blob - The file blob to download
@@ -46,4 +48,15 @@ export async function downloadFromResponse(
   const blob = await response.data;
   const contentDisposition = response.headers?.get("content-disposition");
   downloadFile(blob, contentDisposition, fallbackFilename);
+}
+
+export async function downloadFromFilePath(filePath: string) {
+  const fname = filePath.split("/").pop();
+  await dataProvider.custom({
+    url: filePath,
+    method: "get",
+    meta: {
+      responseType: "blob",
+    },
+  }).then((res) => downloadFromResponse(res, fname));
 }

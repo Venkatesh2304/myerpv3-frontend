@@ -175,7 +175,7 @@ const BankFilters: React.FC<{
           <div className="flex flex-col space-y-2">
             <Label className="text-xs">Amount</Label>
             <DebouncedInput
-              value={getFilterValue(filters, "amt", "")}
+              value={getFilterValue(filters, "amt", null)}
               onChange={(value) => handleFilterChange(setFilters, "amt", value)}
               placeholder="Amount"
             />
