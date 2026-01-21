@@ -313,7 +313,7 @@ export function DataTable<TData extends BaseRecord>({
           </TableBody>
         </Table>
       </div>
-      {!isLoading && getRowModel().rows?.length > 0 && pageCount > 0 && (
+      {!isLoading && getRowModel().rows?.length > 0 && pageCount > 0 && pageSize > 0 && (
         <DataTablePagination
           currentPage={currentPage}
           pageCount={pageCount}

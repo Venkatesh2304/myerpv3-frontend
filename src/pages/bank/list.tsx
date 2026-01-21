@@ -88,8 +88,6 @@ const BankFilters: React.FC<{
     ]
   });
 
-
-
   const resetFilters = () => {
     setFilters(["fromd", "tod", "type", "bank", "status", "amt", "party"].map((field) => ({
       field,
