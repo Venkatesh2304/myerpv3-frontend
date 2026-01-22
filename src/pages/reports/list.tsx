@@ -325,9 +325,6 @@ export const ReportsList = () => {
     return (
         <div className="p-4 space-y-6">
             <Card>
-                <CardHeader>
-                    <CardTitle>Download Report</CardTitle>
-                </CardHeader>
                 <CardContent>
                     <div className="flex flex-col md:flex-row lg:flex-row gap-6">
                         <aside className="w-full md:w-1/4 lg:w-1/5">
@@ -350,7 +347,7 @@ export const ReportsList = () => {
                             </ScrollArea>
                         </aside>
                         <div className="flex-1">
-                            <GenericReportForm config={selectedConfig} />
+                            <GenericReportForm config={selectedConfig} key={selectedConfig.id} />
                         </div>
                     </div>
                 </CardContent>
