@@ -16,6 +16,7 @@ import React from "react";
 import { createColumnHelper } from "@tanstack/react-table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 
 // --- Types ---
 
@@ -108,7 +109,7 @@ const GenericReportForm = ({ config }: { config: ReportConfig }) => {
                     <config.FormFields form={form} />
                     <Button type="submit" disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Download Report
+                        Download
                     </Button>
                 </div>
                 {config.ExtraComponent && (
@@ -163,6 +164,7 @@ const OutstandingReportFields = ({ form }: { form: UseFormReturn<any> }) => (
         />
     </>
 );
+
 
 const BeatDataTable = ({ form }: { form: UseFormReturn<any> }) => {
     const { company } = useCompany();
@@ -237,6 +239,28 @@ const BeatDataTable = ({ form }: { form: UseFormReturn<any> }) => {
 };
 
 const StockReportFields = () => <></>;
+const StockAgeingReportFields = ({ form }: { form: UseFormReturn<any> }) => (
+    <>
+        <FormField
+            control={form.control}
+            name="days"
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Days</FormLabel>
+                    <FormControl>
+                        <Input
+                            type="number"
+                            value={field.value}
+                            onChange={field.onChange}
+                        />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+    </>
+);
+
 
 const reportConfigs: ReportConfig[] = [
     {
@@ -257,6 +281,16 @@ const reportConfigs: ReportConfig[] = [
         includeCompany: false,
         defaultValues: {},
         FormFields: StockReportFields,
+    },
+    {
+        id: "stock_ageing",
+        label: "Stock Ageing Report",
+        url: "stock_ageing_report/",
+        includeCompany: false,
+        defaultValues: {
+            days: 30
+        },
+        FormFields: StockAgeingReportFields,
     },
     {
         id: "pending_sheet",
