@@ -32,7 +32,7 @@ import { ProcessStats, OrderProduct, BillingStats, StopBillingResponse } from ".
 import { Link } from "react-router";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/providers/company-provider";
-import { useNotification, useCustom } from "@refinedev/core";
+import { useNotification, useCustom, useList } from "@refinedev/core";
 import { dataProvider } from "@/lib/dataprovider";
 import {
     Table,
@@ -44,6 +44,8 @@ import {
 } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Legend, Cell } from 'recharts';
 import { PartyCredibilityResponse, PartyCreditResponse } from "./types";
+import { useTable } from "@refinedev/react-table";
+import { ColumnDef } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingButton } from "@/components/ui/loading-button";
@@ -596,7 +598,6 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId,
     const [loading, setLoading] = React.useState(false);
     const [data, setData] = React.useState<PartyCredibilityResponse | null>(null);
     const [creditData, setCreditData] = React.useState<PartyCreditResponse | null>(null);
-    const [savingCredit, setSavingCredit] = React.useState(false);
     const [limit, setLimit] = React.useState(50);
     const [statusFilter, setStatusFilter] = React.useState<'all' | 'pending' | 'settled'>('settled');
     const [minBillValue, setMinBillValue] = React.useState(0);
@@ -625,6 +626,7 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId,
         }
     }, [open, partyId, company?.id]);
 
+
     const fetchCreditDetails = async () => {
         try {
             const response = await dataProvider.custom?.({
@@ -646,7 +648,6 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId,
 
     const handleSaveCredit = async () => {
         if (!creditData || !company?.id || !partyId) return;
-        setSavingCredit(true);
         try {
             await dataProvider.custom?.({
                 url: `/party_credit/`,
@@ -667,8 +668,6 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId,
                 message: "Error updating credit options",
                 description: error.message,
             });
-        } finally {
-            setSavingCredit(false);
         }
     };
 
@@ -813,7 +812,6 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId,
                                 <div className="flex justify-end">
                                     <LoadingButton
                                         onClick={handleSaveCredit}
-                                        loading={savingCredit}
                                         className="bg-blue-600 hover:bg-blue-700"
                                     >
                                         Save Credit Options
@@ -821,6 +819,9 @@ export const PartyDetailsDialog: React.FC<PartyDetailsDialogProps> = ({ partyId,
                                 </div>
                             </div>
                         )}
+
+                        {/* Party Cheque Component */}
+                        {partyId && <PartyCheque partyId={partyId} />}
                     </div>
                 ) : (
                     <div className="text-center p-8 text-muted-foreground">No data available</div>
@@ -856,3 +857,71 @@ export const StopBillingDialog: React.FC<StopBillingDialogProps> = ({ open, onOp
     );
 };
 
+
+interface PartyChequeProps {
+    partyId: string | number;
+}
+
+export const PartyCheque: React.FC<PartyChequeProps> = ({ partyId }) => {
+    const { company } = useCompany();
+
+    const columns = React.useMemo<ColumnDef<any>[]>(
+        () => [
+            {
+                id: "cheque_no",
+                accessorKey: "cheque_no",
+                header: "Cheque No",
+            },
+            {
+                id: "cheque_date",
+                accessorKey: "cheque_date",
+                header: "Date",
+            },
+            {
+                id: "amt",
+                accessorKey: "amt",
+                header: "Amount",
+            },
+        ],
+        [],
+    );
+
+    const table = useTable<any>({
+        columns,
+        enableRowSelection: false,
+        refineCoreProps: {
+            resource: "cheque",
+            filters: {
+                permanent: [
+                    {
+                        field: "company",
+                        operator: "eq",
+                        value: company?.id,
+                    },
+                    {
+                        field: "party",
+                        operator: "eq",
+                        value: partyId,
+                    },
+                    {
+                        field: "has_bank_entry",
+                        operator: "eq",
+                        value: false,
+                    },
+                ],
+            },
+            queryOptions: {
+                enabled: !!company?.id && !!partyId,
+            },
+        }
+    });
+
+    return (
+        <div className="border rounded-md p-4 space-y-4">
+            <h3 className="font-semibold">Pending Cheques</h3>
+            <div className="border rounded-md">
+                <DataTable table={table} />
+            </div>
+        </div>
+    );
+};
