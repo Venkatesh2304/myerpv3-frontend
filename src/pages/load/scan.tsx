@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { useEffect, useMemo } from "react"
 import { dataProvider } from "@/lib/dataprovider";
 import { useCompany } from "@/providers/company-provider";
-import { useNotification } from "@refinedev/core"
+import { useCustom, useNotification } from "@refinedev/core"
 import {
     Dialog,
     DialogContent,
@@ -26,8 +26,17 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
-type StoreMap = Record<string, Record<number, number>>;
 interface QtyMap {
     [cbu: string]: {
         [mrp: number]: number;
@@ -129,9 +138,113 @@ function EditItemDialog({ item, open, onOpenChange, onUpdate }: EditItemDialogPr
     )
 }
 
-export function TruckLoadPage() {
-    const { company } = useCompany();
+interface ScanConfirmationAlertProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    title?: string;
+    description?: string;
+    onConfirm: () => void;
+}
+
+function ScanConfirmationAlert({ open, onOpenChange, title, description, onConfirm }: ScanConfirmationAlertProps) {
+    const audioRef = React.useRef<HTMLAudioElement | null>(null);
+
+    useEffect(() => {
+        audioRef.current = new Audio("/notification.mp3");
+    }, []);
+
+    useEffect(() => {
+        if (open) {
+            audioRef.current?.play().catch(e => console.error("Error playing sound", e));
+        }
+    }, [open]);
+    return (
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{title}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {description}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex flex-row justify-between">
+                    <AlertDialogCancel className="h-12 w-24 bg-red-500 text-white">Cancel</AlertDialogCancel>
+                    <AlertDialogAction className="h-12 w-24 bg-green-500" onClick={onConfirm}>Continue</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+}
+
+interface SaveConfirmationDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onConfirm: (qty: number) => void;
+}
+
+function SaveConfirmationDialog({ open, onOpenChange, onConfirm }: SaveConfirmationDialogProps) {
+    const [qty, setQty] = React.useState("");
+
+    useEffect(() => {
+        if (open) {
+            setQty("");
+        }
+    }, [open]);
+
+    const handleConfirm = () => {
+        if (qty && !isNaN(Number(qty))) {
+            onConfirm(Number(qty));
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Confirm Box Total</DialogTitle>
+                    <DialogDescription>
+                        Please enter the total number of cases to confirm.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="total-qty" className="text-right">
+                            Total Qty
+                        </Label>
+                        <Input
+                            id="total-qty"
+                            value={qty}
+                            onChange={(e) => setQty(e.target.value)}
+                            placeholder="Enter total quantity"
+                            className="col-span-3 h-12"
+                            type="number"
+                            autoFocus
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    handleConfirm();
+                                }
+                            }}
+                        />
+                    </div>
+                </div>
+                <DialogFooter className="flex flex-row justify-between">
+                    <Button className="h-12 w-24 bg-red-500 text-white" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button className="h-12 w-24 bg-green-500" onClick={handleConfirm}>Save</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+export function ScanLoadPage() {
     const { open } = useNotification();
+    const { query: { data: loadData, isLoading: isLoadLoading } } = useCustom({
+        url: "get_last_load",
+        method: "get",
+    });
+
+    const loadNo = loadData?.data?.load;
+
     const form = useForm({
         defaultValues: {
             cbu: "",
@@ -146,42 +259,47 @@ export function TruckLoadPage() {
     const [currentScanned, setCurrentScanned] = React.useState<QtyMap>({});
     const [editingItem, setEditingItem] = React.useState<{ cbu: string; mrp: number; qty: number } | null>(null);
     const cbuInputRef = React.useRef<HTMLInputElement>(null);
+    const [alertOpen, setAlertOpen] = React.useState(false);
+    const [alertConfig, setAlertConfig] = React.useState<{
+        title: string;
+        description: string;
+        onConfirm: () => void;
+    } | null>(null);
+    const [saveDialogOpen, setSaveDialogOpen] = React.useState(false);
+
 
     const focusInput = () => {
         setTimeout(() => {
             cbuInputRef.current?.focus();
-        }, 100);
+        }, 300);
     };
 
     useEffect(() => {
-        if (!company?.id) return;
-        dataProvider.custom({
-            url: "/load",
-            method: "get",
-            payload: {
-                company_id: company?.id
-            }
+        if (!loadNo) return;
+        dataProvider.getOne({
+            resource: "load_detail",
+            id: loadNo
         }).then((res) => {
-            setPurchase(res.data.purchase);
+            setPurchase(res.data.purchase_qty_map);
             setMaxBox(res.data.box_count);
             setBox(res.data.box_count);
         });
-    }, [company?.id]);
+    }, [loadNo]);
 
     useEffect(() => {
-        if ((!company?.id) || !box) return;
+        if (!box || !loadNo) return;
         dataProvider.custom({
             url: "/box",
             method: "get",
             query: {
-                company_id: company?.id,
-                box_no: box
+                box_no: box,
+                load: loadNo
             }
         }).then((res) => {
             setOtherScanned(res.data.others_scanned);
             setCurrentScanned(res.data.current_scanned);
         });
-    }, [box, company?.id]);
+    }, [box, loadNo]);
 
     const updateScannedItem = (cbu: string, mrp: number, qty: number, isAddition: boolean) => {
         setCurrentScanned((prev) => {
@@ -218,13 +336,21 @@ export function TruckLoadPage() {
         const qty = Number(data.qty);
 
         if (!purchase[cbu]) {
-            if (window.confirm("This product is not in purchase. Confirm add?")) {
-                updateScannedItem(cbu, mrp, qty, true);
-            }
+            setAlertConfig({
+                title: "Product not in purchase",
+                description: "This product is not in purchase. Confirm add?",
+                onConfirm: () => updateScannedItem(cbu, mrp, qty, true)
+            });
+            setAlertOpen(true);
+            return;
         } else if (!purchase[cbu][mrp]) {
-            if (window.confirm("This MRP is not present in purchase. Confirm is correct?")) {
-                updateScannedItem(cbu, mrp, qty, true);
-            }
+            setAlertConfig({
+                title: "MRP not in purchase",
+                description: "This MRP is not present in purchase. Confirm is correct?",
+                onConfirm: () => updateScannedItem(cbu, mrp, qty, true)
+            });
+            setAlertOpen(true);
+            return;
         } else {
             updateScannedItem(cbu, mrp, qty, true);
         }
@@ -252,20 +378,40 @@ export function TruckLoadPage() {
     };
 
     const onSave = () => {
-        dataProvider.custom({
-            url: "/box/",
-            method: "post",
-            payload: {
-                company_id: company?.id,
-                box_no: box,
-                scanned: currentScanned
-            }
-        }).then((res) => {
-            setMaxBox(res.data.box_no);
-            setBox(res.data.box_no);
-            focusInput();
-        });
+        setSaveDialogOpen(true);
     }
+
+    const handleSaveConfirm = (enteredQty: number) => {
+        const currentTotalQty = Object.values(currentScanned).reduce((acc, mrpMap) => {
+            return acc + Object.values(mrpMap).reduce((sum, qty) => sum + qty, 0);
+        }, 0);
+
+        if (enteredQty === currentTotalQty) {
+            dataProvider.custom({
+                url: "/box/",
+                method: "post",
+                payload: {
+                    box_no: box,
+                    load: loadNo,
+                    scanned: currentScanned
+                }
+            }).then((res) => {
+                setMaxBox(res.data.box_no);
+                setBox(res.data.box_no);
+                setSaveDialogOpen(false);
+                focusInput();
+                open?.({
+                    type: "success",
+                    message: "Box saved successfully",
+                });
+            });
+        } else {
+            open?.({
+                type: "error",
+                message: "Total quantity mismatch. Please check and try again.",
+            });
+        }
+    };
 
     const flattenedScannedItems = useMemo(() => (
         Object.entries(currentScanned).flatMap(([cbu, mrps]) =>
@@ -311,6 +457,7 @@ export function TruckLoadPage() {
                         <Input
                             className="h-12"
                             placeholder="CBU"
+                            autoFocus={true}
                             {...form.register("cbu")}
                             onFocus={() => setShowSuggestions(true)}
                             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Delay to allow click
@@ -384,6 +531,29 @@ export function TruckLoadPage() {
                     }
                 }}
                 onUpdate={updateScannedItem}
+            />
+            <ScanConfirmationAlert
+                open={alertOpen}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setAlertOpen(false);
+                        focusInput();
+                    }
+                }}
+                title={alertConfig?.title}
+                description={alertConfig?.description}
+                onConfirm={() => {
+                    alertConfig?.onConfirm();
+                    form.reset();
+                }}
+            />
+            <SaveConfirmationDialog
+                open={saveDialogOpen}
+                onOpenChange={(open) => {
+                    setSaveDialogOpen(open);
+                    if (!open) focusInput();
+                }}
+                onConfirm={handleSaveConfirm}
             />
         </>
     );

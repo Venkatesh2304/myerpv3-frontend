@@ -24,13 +24,14 @@ import { BillingList } from "@/pages/billing";
 import { ReportsList } from "@/pages/reports/list";
 import { dataProvider } from "./lib/dataprovider";
 import { authProvider } from "./lib/authprovider";
-import { BookOpenTextIcon, LandmarkIcon, PrinterIcon, ScrollTextIcon, Building2Icon, SettingsIcon, FileTextIcon, CameraIcon } from "lucide-react";
+import { BookOpenTextIcon, LandmarkIcon, PrinterIcon, ScrollTextIcon, Building2Icon, SettingsIcon, FileTextIcon, CameraIcon, TruckIcon } from "lucide-react";
 import { Login } from "./pages/login";
 import { CompanyProvider, useCompany } from "./providers/company-provider";
 import { useEffect } from "react";
 import { CompanyRouteWrapper } from "./components/company-route-wrapper";
 import { SettingsPage } from "./pages/settings";
-import { TruckLoadPage } from "./pages/load";
+import { ScanLoadPage } from "./pages/load/scan";
+import { TruckLoadPage } from "./pages/load/truck";
 function App() {
   return (
     <BrowserRouter>
@@ -87,10 +88,18 @@ function App() {
                 },
               },
               {
-                name: "load",
-                list: "/load",
+                name: "truck",
+                list: "/truck",
                 meta: {
-                  label: "Load",
+                  label: "Truck",
+                  icon: <TruckIcon />
+                },
+              },
+              {
+                name: "scan",
+                list: "/scan",
+                meta: {
+                  label: "Scan",
                   icon: <CameraIcon />
                 },
               },
@@ -152,8 +161,11 @@ function App() {
                 <Route path="/reports">
                   <Route index element={<CompanyRouteWrapper Component={ReportsList} />} />
                 </Route>
-                <Route path="/load">
+                <Route path="/truck">
                   <Route index element={<CompanyRouteWrapper Component={TruckLoadPage} />} />
+                </Route>
+                <Route path="/scan">
+                  <Route index element={<CompanyRouteWrapper Component={ScanLoadPage} />} />
                 </Route>
                 <Route path="*" element={<ErrorComponent />} />
               </Route>
