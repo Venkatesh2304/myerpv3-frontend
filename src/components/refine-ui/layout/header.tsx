@@ -92,42 +92,7 @@ function MobileHeader() {
           "pointer-events-none": open && !isMobile,
         })}
       />
-
-      <div
-        className={cn(
-          "whitespace-nowrap",
-          "flex",
-          "flex-row",
-          "h-full",
-          "items-center",
-          "justify-start",
-          "gap-2",
-          "transition-discrete",
-          "duration-200",
-          {
-            "pl-3": !open,
-            "pl-5": open,
-          }
-        )}
-      >
-        <div>{title.icon}</div>
-        <h2
-          className={cn(
-            "text-sm",
-            "font-bold",
-            "transition-opacity",
-            "duration-200",
-            {
-              "opacity-0": !open,
-              "opacity-100": open,
-            }
-          )}
-        >
-          {title.text}
-        </h2>
-      </div>
-
-      <ThemeToggle className={cn("h-8", "w-8")} />
+      <CompanyDropdown />
     </header>
   );
 }
