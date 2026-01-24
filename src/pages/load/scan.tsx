@@ -155,10 +155,10 @@ function ScanConfirmationAlert({ open, onOpenChange, title, description, onConfi
 
     useEffect(() => {
         if (open) {
-            audioRef.current?.play().catch(e => console.error("Error playing sound", e));
+            // audioRef.current?.play().catch(e => console.error("Error playing sound", e));
         }
     }, [open]);
-    
+
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
