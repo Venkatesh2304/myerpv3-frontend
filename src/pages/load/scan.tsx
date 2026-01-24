@@ -267,6 +267,11 @@ export function ScanLoadPage() {
         onConfirm: () => void;
     } | null>(null);
     const [saveDialogOpen, setSaveDialogOpen] = React.useState(false);
+    const scannedCount = useMemo(() => {
+        return Object.values(currentScanned).reduce((acc, mrpMap) => {
+            return acc + Object.values(mrpMap).reduce((sum, qty) => sum + qty, 0);
+        }, 0);
+    }, [currentScanned]);
 
 
     const focusInput = () => {
@@ -487,7 +492,7 @@ export function ScanLoadPage() {
                     </div>
                     <Input className="h-12" placeholder="MRP" type="number" {...form.register("mrp")} />
                     <Input className="h-12" placeholder="Qty" type="number" {...form.register("qty")} />
-                    <Button type="submit" className="bg-blue-500 h-12 text-lg">Add</Button>
+                    <Button type="submit" className="bg-blue-500 h-12 text-lg">Add ({scannedCount})</Button>
                 </form>
                 <Table>
                     <TableHeader>
