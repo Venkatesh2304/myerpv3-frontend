@@ -258,6 +258,7 @@ export function ScanLoadPage() {
     const [purchase, setPurchase] = React.useState<QtyMap>({});
     const [otherScanned, setOtherScanned] = React.useState<QtyMap>({});
     const [currentScanned, setCurrentScanned] = React.useState<QtyMap>({});
+    const [lastScanned, setLastScanned] = React.useState<Record<string, number>>({});
     const [editingItem, setEditingItem] = React.useState<{ cbu: string; mrp: number; qty: number } | null>(null);
     const cbuInputRef = React.useRef<HTMLInputElement>(null);
     const [alertOpen, setAlertOpen] = React.useState(false);
@@ -308,6 +309,7 @@ export function ScanLoadPage() {
     }, [box, loadNo]);
 
     const updateScannedItem = (cbu: string, mrp: number, qty: number, isAddition: boolean) => {
+        setLastScanned(prev => ({ ...prev, [`${cbu}-${mrp}`]: Date.now() }));
         setCurrentScanned((prev) => {
             const currentQty = prev?.[cbu]?.[mrp] || 0;
             const newQty = isAddition ? currentQty + qty : qty;
@@ -418,15 +420,20 @@ export function ScanLoadPage() {
         }
     };
 
-    const flattenedScannedItems = useMemo(() => (
-        Object.entries(currentScanned).flatMap(([cbu, mrps]) =>
+    const flattenedScannedItems = useMemo(() => {
+        const items = Object.entries(currentScanned).flatMap(([cbu, mrps]) =>
             Object.entries(mrps).map(([mrp, qty]) => ({
                 cbu,
                 mrp: Number(mrp),
                 qty,
             }))
-        )
-    ), [currentScanned]);
+        );
+        return items.sort((a, b) => {
+            const timeA = lastScanned[`${a.cbu}-${a.mrp}`] || 0;
+            const timeB = lastScanned[`${b.cbu}-${b.mrp}`] || 0;
+            return timeB - timeA;
+        });
+    }, [currentScanned, lastScanned]);
 
     const cbuValue = form.watch("cbu");
     const [showSuggestions, setShowSuggestions] = React.useState(false);
