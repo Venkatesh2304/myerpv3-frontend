@@ -339,7 +339,7 @@ export function ScanLoadPage() {
 
         if (!purchase[cbu]) {
             setAlertConfig({
-                title: "Product not in purchase",
+                title: "Product not in purchase " + cbu,
                 description: "This product is not in purchase. Confirm add?",
                 onConfirm: () => updateScannedItem(cbu, mrp, qty, true)
             });
