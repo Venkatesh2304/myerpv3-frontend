@@ -364,9 +364,9 @@ export function ScanLoadPage() {
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if ((e.key === 'Enter') || (e.currentTarget.value?.endsWith("\n")) || (e.currentTarget.value?.endsWith("\r"))) {
             const value = e.currentTarget.value;
+            e.preventDefault();
             //Basic check to see if it looks like the barcode format
             if (value.includes("(241)") && value.includes("(10)") && value.includes("(90)") && value.includes("(21)")) {
-                e.preventDefault();
                 try {
                     const cbu = value.split("(241)")[1].split("(10)")[0].trim().toUpperCase();
                     const mrp = Number(value.split("(90)")[1].split("(21)")[0].trim());
