@@ -336,7 +336,8 @@ export function ScanLoadPage() {
         const cbu = data.cbu;
         const mrp = Number(data.mrp);
         const qty = Number(data.qty);
-
+        window.alert("CBU : " + cbu + " MRP : " + mrp + " Qty : " + qty);
+        return;
         if (!purchase[cbu]) {
             setAlertConfig({
                 title: "Product not in purchase " + (cbu || "empty"),
