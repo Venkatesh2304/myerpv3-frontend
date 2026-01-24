@@ -155,6 +155,7 @@ function ScanConfirmationAlert({ open, onOpenChange, title, description, onConfi
 
     useEffect(() => {
         if (open) {
+            window.alert("Sound : " + (title || "") + ", " + (description || ""));
             // audioRef.current?.play().catch(e => console.error("Error playing sound", e));
         }
     }, [open]);
