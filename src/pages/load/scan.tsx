@@ -336,7 +336,7 @@ export function ScanLoadPage() {
         const cbu = data.cbu;
         const mrp = Number(data.mrp);
         const qty = Number(data.qty);
-        if (!purchase[cbu]) {
+        if (true) {
             window.alert("CBU : " + cbu + " MRP : " + mrp + " Qty : " + qty);
             return;
             setAlertConfig({
