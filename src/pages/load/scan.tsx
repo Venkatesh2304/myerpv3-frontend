@@ -371,6 +371,7 @@ export function ScanLoadPage() {
                     const cbu = value.split("(241)")[1].split("(10)")[0].trim().toUpperCase();
                     const mrp = Number(value.split("(90)")[1].split("(21)")[0].trim());
                     if (cbu && !isNaN(mrp)) {
+                        console.log("Hello :", cbu)
                         onAdd({ cbu, mrp, qty: 1 });
                     }
                 } catch (err) {
