@@ -158,6 +158,7 @@ function ScanConfirmationAlert({ open, onOpenChange, title, description, onConfi
             audioRef.current?.play().catch(e => console.error("Error playing sound", e));
         }
     }, [open]);
+    
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
@@ -429,7 +430,7 @@ export function ScanLoadPage() {
     const suggestions = useMemo(() => {
         if (!cbuValue || (cbuValue?.length < 3)) return [];
         return Object.keys(purchase).filter((key) =>
-            key.toLowerCase().includes(cbuValue.toLowerCase()) || true
+            key.toLowerCase().includes(cbuValue.toLowerCase())
         );
     }, [cbuValue, purchase]);
 
