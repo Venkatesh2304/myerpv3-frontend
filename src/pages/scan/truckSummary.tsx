@@ -17,7 +17,7 @@ import { dataProvider } from "@/lib/dataprovider";
 import { downloadFile, downloadFromFilePath } from "@/lib/download";
 import { LoadingButton } from "@/components/ui/loading-button";
 
-export const TruckLoadPage = () => {
+export const TruckSummaryPage = () => {
     // 1. Get the last load number
     const { query: { data: loadData, isLoading: isLoadLoading, refetch: refetchLastLoad } } = useCustom({
         url: "get_last_load",

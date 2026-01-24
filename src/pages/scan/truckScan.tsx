@@ -237,7 +237,7 @@ function SaveConfirmationDialog({ open, onOpenChange, onConfirm }: SaveConfirmat
     );
 }
 
-export function ScanLoadPage() {
+export function TruckScanPage() {
     const { open } = useNotification();
     const { query: { data: loadData, isLoading: isLoadLoading } } = useCustom({
         url: "get_last_load",
@@ -462,7 +462,7 @@ export function ScanLoadPage() {
                         }
                         setBox(e.target.value);
                     }} />
-                    <Label className="w-fit-content ml-auto font-normal">Last Box: {maxBox}</Label>
+                    <Label className="w-fit-content ml-auto font-normal">Last Box: {maxBox - 1}</Label>
                 </div>
                 <form onSubmit={form.handleSubmit(onAdd)} className="flex gap-3 flex-col relative">
                     <div className="relative">

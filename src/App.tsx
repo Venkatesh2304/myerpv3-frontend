@@ -30,8 +30,8 @@ import { CompanyProvider, useCompany } from "./providers/company-provider";
 import { useEffect } from "react";
 import { CompanyRouteWrapper } from "./components/company-route-wrapper";
 import { SettingsPage } from "./pages/settings";
-import { ScanLoadPage } from "./pages/load/scan";
-import { TruckLoadPage } from "./pages/load/truck";
+import { ScanPage } from "./pages/scan";
+import { TruckSummaryPage } from "./pages/scan/truckSummary";
 function App() {
   return (
     <BrowserRouter>
@@ -162,10 +162,10 @@ function App() {
                   <Route index element={<CompanyRouteWrapper Component={ReportsList} />} />
                 </Route>
                 <Route path="/truck">
-                  <Route index element={<CompanyRouteWrapper Component={TruckLoadPage} />} />
+                  <Route index element={<CompanyRouteWrapper Component={TruckSummaryPage} />} />
                 </Route>
                 <Route path="/scan">
-                  <Route index element={<CompanyRouteWrapper Component={ScanLoadPage} />} />
+                  <Route index element={<CompanyRouteWrapper Component={ScanPage} />} />
                 </Route>
                 <Route path="*" element={<ErrorComponent />} />
               </Route>
