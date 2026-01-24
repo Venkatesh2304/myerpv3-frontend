@@ -155,8 +155,7 @@ function ScanConfirmationAlert({ open, onOpenChange, title, description, onConfi
 
     useEffect(() => {
         if (open) {
-            window.alert("Sound : " + (title || "") + ", " + (description || ""));
-            // audioRef.current?.play().catch(e => console.error("Error playing sound", e));
+            audioRef.current?.play().catch(e => console.error("Error playing sound", e));
         }
     }, [open]);
 
@@ -337,10 +336,8 @@ export function ScanLoadPage() {
         const mrp = Number(data.mrp);
         const qty = Number(data.qty);
         if (!purchase[cbu]) {
-            window.alert("CBU : " + cbu + " MRP : " + mrp + " Qty : " + qty);
-            return;
             setAlertConfig({
-                title: "Product not in purchase " + (cbu || "empty"),
+                title: "Product not in purchase " + cbu,
                 description: "This product is not in purchase. Confirm add?",
                 onConfirm: () => updateScannedItem(cbu, mrp, qty, true)
             });
@@ -348,7 +345,7 @@ export function ScanLoadPage() {
             return;
         } else if (!purchase[cbu][mrp]) {
             setAlertConfig({
-                title: "MRP not in purchase",
+                title: "MRP not in purchase " + mrp,
                 description: "This MRP is not present in purchase. Confirm is correct?",
                 onConfirm: () => updateScannedItem(cbu, mrp, qty, true)
             });
@@ -371,7 +368,6 @@ export function ScanLoadPage() {
                     const cbu = value.split("(241)")[1].split("(10)")[0].trim().toUpperCase();
                     const mrp = Number(value.split("(90)")[1].split("(21)")[0].trim());
                     if (cbu && !isNaN(mrp)) {
-                        console.log("Hello :", cbu)
                         onAdd({ cbu, mrp, qty: 1 });
                     }
                 } catch (err) {
