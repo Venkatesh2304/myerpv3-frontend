@@ -18,7 +18,7 @@ export const SummaryPage = () => {
                         onClick={() => setMode("truck")}
                     >
                         <Truck className="h-12 w-12" />
-                        Truck Summary
+                        Lorry
                     </Button>
                     <Button
                         variant="outline"
@@ -26,7 +26,7 @@ export const SummaryPage = () => {
                         onClick={() => setMode("vehicle")}
                     >
                         <Car className="h-12 w-12" />
-                        Vehicle Summary
+                        Delivery
                     </Button>
                 </div>
             </div>

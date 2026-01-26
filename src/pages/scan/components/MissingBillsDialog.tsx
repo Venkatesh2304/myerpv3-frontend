@@ -13,9 +13,17 @@ interface MissingBillsDialogProps {
     trigger?: React.ReactNode;
 }
 
+const getYesterday = () => {
+    const d = new Date();
+    const dayOfWeek = d.getDay(); // 0 (Sun) to 6 (Sat)
+    const daysToSubtract = (dayOfWeek === 1) ? 2 : 1;
+    d.setDate(d.getDate() - daysToSubtract);
+    return d;
+};
+
 export const MissingBillsDialog: React.FC<MissingBillsDialogProps> = ({ vehicleId, trigger }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [date, setDate] = useState(getYesterday().toISOString().split('T')[0]);
 
     const { query: { data: missingBillsData, isLoading } } = useList({
         resource: "bill_scan",
@@ -37,7 +45,8 @@ export const MissingBillsDialog: React.FC<MissingBillsDialogProps> = ({ vehicleI
             }
         ],
         pagination: {
-            mode: "off"
+            pageSize: 500,
+            mode: "server"
         },
         queryOptions: {
             enabled: isOpen && !!vehicleId,
@@ -75,9 +84,14 @@ export const MissingBillsDialog: React.FC<MissingBillsDialogProps> = ({ vehicleI
                                 <p className="text-center text-muted-foreground p-4">No missing bills found for this date.</p>
                             ) : (
                                 <div className="flex flex-col gap-2">
-                                    {missingBills.map((item: any, index: number) => (
-                                        <div key={item?.bill} className={cn(!item.loading_sheet ? "text-blue-500" : "text-green-500", "font-bold")}>
-                                            {item.bill || item}
+                                    {missingBills?.map((item: any, index: number) => (
+                                        <div key={item?.bill} className={cn("flex gap-4", !item.loading_sheet ? "text-blue-500" : "text-green-500")}>
+                                            <div className={cn("font-bold")}>
+                                                {item.bill || item}
+                                            </div>
+                                            <div>
+                                                {item.party}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -85,7 +99,7 @@ export const MissingBillsDialog: React.FC<MissingBillsDialogProps> = ({ vehicleI
                         </ScrollArea>
                     </div>
                 </div>
-            </DialogContent>
-        </Dialog>
+            </DialogContent >
+        </Dialog >
     );
 };

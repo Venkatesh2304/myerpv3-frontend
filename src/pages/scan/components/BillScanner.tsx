@@ -59,9 +59,9 @@ export const BillScanner: React.FC<BillScannerProps> = ({ vehicle, mode, onBack,
         }
     }, [billData]);
 
-    const notifyError = (message: string) => {
+    const notify = (message: string, error: boolean) => {
         open?.({
-            type: "error",
+            type: error ? "error" : "success",
             message,
         });
         audioRef?.current?.play();
@@ -87,17 +87,20 @@ export const BillScanner: React.FC<BillScannerProps> = ({ vehicle, mode, onBack,
             });
             if (data?.status == "success") {
                 const newBills = data?.bills || [];
+                if (data?.other_vehicle) {
+                    notify(`Bill was loaded in other vehicle ${data?.other_vehicle}`, false);
+                }
                 // Merge new bills with existing ones, avoiding duplicates
                 setBills(prev => {
                     const combined = [...newBills, ...prev];
                     return Array.from(new Set(combined));
                 });
             } else {
-                notifyError(data?.message);
+                notify(data?.message, true);
             }
         } catch (error) {
             console.error("Error adding bill", error);
-            notifyError("Failed to add bill");
+            notify("Failed to add bill", true);
         }
     };
 

@@ -14,6 +14,7 @@ import { getFilterValue, handleFilterChange } from "@/lib/filters";
 import { cn } from "@/lib/utils";
 import { format, subDays } from "date-fns";
 import { DebouncedInput } from "@/components/ui/debounced-input";
+import { ScanSummaryDialog } from "./components/ScanSummaryDialog";
 
 const TYPE_OPTIONS = [
     { value: "all", label: "All" },
@@ -159,7 +160,7 @@ export const VehicleSummaryPage = () => {
                         {getValue()}
                     </span>
                 ),
-                size: 100
+                size: 75
             }),
             columnHelper.accessor("vehicle", {
                 id: "vehicle",
@@ -174,28 +175,28 @@ export const VehicleSummaryPage = () => {
                 header: "Party",
                 enableSorting: true,
                 cell: ({ getValue }) => getValue(),
-                size: 250
+                size: 200
             }),
             columnHelper.accessor("bill_date", {
                 id: "bill_date",
                 header: "Bill Date",
                 enableSorting: true,
                 cell: ({ getValue }) => getValue() ? new Date(getValue()).toLocaleDateString('en-IN') : "-",
-                size: 200
+                size: 100
             }),
             columnHelper.accessor("loading_time", {
                 id: "loading_time",
                 header: "Loading Time",
                 enableSorting: true,
                 cell: ({ getValue }) => getValue() ? format(new Date(getValue()), "PP p") : "-",
-                size: 200
+                size: 150
             }),
             columnHelper.accessor("delivery_time", {
                 id: "delivery_time",
                 header: "Delivery Time",
                 enableSorting: true,
                 cell: ({ getValue }) => getValue() ? format(new Date(getValue()), "PP p") : "-",
-                size: 200
+                size: 150
             }),
         ];
     }, []);
@@ -236,6 +237,14 @@ export const VehicleSummaryPage = () => {
 
     return (
         <div className="container max-w-full">
+            <div className="flex justify-end mb-2">
+                <ScanSummaryDialog onFilterClick={(date, type, field) => {
+                    setFilters([
+                        { field: field, operator: "eq", value: date },
+                        { field: "type", operator: "eq", value: type }
+                    ], "replace");
+                }} />
+            </div>
             <VehicleFilters filters={filters} setFilters={setFilters} />
             <DataTable table={table} />
         </div>

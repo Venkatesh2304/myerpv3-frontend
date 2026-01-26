@@ -18,7 +18,7 @@ export const ScanPage = () => {
                         onClick={() => setMode("truck")}
                     >
                         <Truck className="h-12 w-12" />
-                        Truck Scan
+                        Lorry Load
                     </Button>
                     <Button
                         variant="outline"
@@ -26,7 +26,7 @@ export const ScanPage = () => {
                         onClick={() => setMode("load")}
                     >
                         <PackagePlus className="h-12 w-12" />
-                        Vehicle Load
+                        Delivery OUT
                     </Button>
                     <Button
                         variant="outline"
@@ -34,7 +34,7 @@ export const ScanPage = () => {
                         onClick={() => setMode("delivery")}
                     >
                         <PackageCheck className="h-12 w-12" />
-                        Vehicle Delivery
+                        Delivery IN
                     </Button>
                 </div>
             </div>
