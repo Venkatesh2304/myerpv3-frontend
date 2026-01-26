@@ -56,7 +56,7 @@ const COLLECTION_TYPES = [
   { value: "self_transfer", label: "Self Transfer" },
   { value: "others", label: "Others" },
 ];
-
+ 
 const STATUS_FILTER_OPTIONS = [
   { value: "all", label: "All" },
   { value: "not_saved", label: "Not Saved" },
@@ -641,21 +641,8 @@ const BankSummaryDialog = () => {
 };
 
 export const BankList = () => {
-  // const [filters, setFilters] = React.useState<CrudFilters>([]);
   const { company } = useCompany();
-  // const [permanentFilters, setPermanentFilters] = React.useState<CrudFilters>([]);
-
-  // React.useEffect(() => {
-  //   setPermanentFilters([
-  //     ...filters,
-  //     {
-  //       field: "company",
-  //       operator: "eq",
-  //       value: company?.id,
-  //     }
-  //   ]);
-  // }, [filters, company]);
-
+  
   const columns = React.useMemo(() => {
     const columnHelper = createColumnHelper<Bank>();
 

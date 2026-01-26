@@ -31,7 +31,7 @@ import { useEffect } from "react";
 import { CompanyRouteWrapper } from "./components/company-route-wrapper";
 import { SettingsPage } from "./pages/settings";
 import { ScanPage } from "./pages/scan";
-import { TruckSummaryPage } from "./pages/scan/truckSummary";
+import { SummaryPage } from "./pages/scan/summaryIndex";
 function App() {
   return (
     <BrowserRouter>
@@ -162,7 +162,7 @@ function App() {
                   <Route index element={<CompanyRouteWrapper Component={ReportsList} />} />
                 </Route>
                 <Route path="/truck">
-                  <Route index element={<CompanyRouteWrapper Component={TruckSummaryPage} />} />
+                  <Route index element={<CompanyRouteWrapper Component={SummaryPage} />} />
                 </Route>
                 <Route path="/scan">
                   <Route index element={<CompanyRouteWrapper Component={ScanPage} />} />
