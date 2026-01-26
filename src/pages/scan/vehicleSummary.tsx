@@ -197,6 +197,11 @@ export const VehicleSummaryPage = () => {
                         field: "company",
                         operator: "eq",
                         value: company?.id,
+                    },
+                    {
+                        field: "is_loading_sheet",
+                        operator: "eq",
+                        value: false,
                     }
                 ],
                 initial: [
