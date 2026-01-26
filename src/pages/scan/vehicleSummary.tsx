@@ -78,7 +78,7 @@ const VehicleFilters: React.FC<{
                             </SelectContent>
                         </Select>
                     </div>
-                    
+
                     <div className="flex flex-col space-y-2">
                         <Label className="text-xs">Bill Date</Label>
                         <DatePicker
@@ -202,7 +202,7 @@ export const VehicleSummaryPage = () => {
 
     const table = useTable({
         columns,
-        enableRowSelection: true,
+        enableRowSelection: false,
         refineCoreProps: {
             resource: "bill_scan",
             syncWithLocation: true,
@@ -220,16 +220,6 @@ export const VehicleSummaryPage = () => {
                     }
                 ],
                 initial: [
-                    {
-                        field: "loading_date",
-                        operator: "eq",
-                        value: format(subDays(new Date(), 1), "yyyy-MM-dd"),
-                    },
-                    {
-                        field: "type",
-                        operator: "eq",
-                        value: "not_delivered",
-                    }
                 ]
             },
             pagination: {
