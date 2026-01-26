@@ -78,6 +78,14 @@ const VehicleFilters: React.FC<{
                             </SelectContent>
                         </Select>
                     </div>
+                    
+                    <div className="flex flex-col space-y-2">
+                        <Label className="text-xs">Bill Date</Label>
+                        <DatePicker
+                            value={getFilterValue(filters, "bill_date", null)}
+                            onChange={(date) => handleFilterChange(setFilters, "bill_date", date)}
+                        />
+                    </div>
 
                     <div className="flex flex-col space-y-2">
                         <Label className="text-xs">Loading Date</Label>
@@ -95,14 +103,14 @@ const VehicleFilters: React.FC<{
                         />
                     </div>
 
-                    <div className="flex flex-col space-y-2">
+                    {/* <div className="flex flex-col space-y-2">
                         <Label className="text-xs">Bill No</Label>
                         <DebouncedInput
                             value={getFilterValue(filters, "bill", null)}
                             onChange={(value) => handleFilterChange(setFilters, "bill", value)}
                             placeholder="Bill No"
                         />
-                    </div>
+                    </div> */}
 
                     <div className="flex flex-col space-y-2 col-span-2">
                         <Label className="text-xs">Party</Label>
@@ -167,6 +175,13 @@ export const VehicleSummaryPage = () => {
                 enableSorting: true,
                 cell: ({ getValue }) => getValue(),
                 size: 250
+            }),
+            columnHelper.accessor("bill_date", {
+                id: "bill_date",
+                header: "Bill Date",
+                enableSorting: true,
+                cell: ({ getValue }) => getValue() ? new Date(getValue()).toLocaleDateString('en-IN') : "-",
+                size: 200
             }),
             columnHelper.accessor("loading_time", {
                 id: "loading_time",
