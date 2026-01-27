@@ -87,8 +87,8 @@ export const BillScanner: React.FC<BillScannerProps> = ({ vehicle, mode, onBack,
             });
             if (data?.status == "success") {
                 const newBills = data?.bills || [];
-                if (data?.other_vehicle) {
-                    notify(`Bill was loaded in other vehicle ${data?.other_vehicle}`, false);
+                if (data?.loaded_vehicle != vehicle.name) {
+                    notify(`Bill was loaded in other vehicle ${data?.loaded_vehicle}`, false);
                 }
                 // Merge new bills with existing ones, avoiding duplicates
                 setBills(prev => {

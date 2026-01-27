@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 import { format, subDays } from "date-fns";
 import { DebouncedInput } from "@/components/ui/debounced-input";
 import { ScanSummaryDialog } from "./components/ScanSummaryDialog";
+import { BillActionDialog } from "./components/BillActionDialog";
+
 
 const TYPE_OPTIONS = [
     { value: "all", label: "All" },
@@ -143,11 +145,21 @@ const VehicleFilters: React.FC<{
 
 export const VehicleSummaryPage = () => {
     const { company } = useCompany();
+    const [selectedBill, setSelectedBill] = React.useState<any>(null);
+    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+
 
     const columns = useMemo(() => {
         const columnHelper = createColumnHelper<any>();
 
         return [
+            columnHelper.accessor("bill_date", {
+                id: "bill_date",
+                header: "Bill Date",
+                enableSorting: true,
+                cell: ({ getValue }) => getValue() ? new Date(getValue()).toLocaleDateString('en-IN') : "-",
+                size: 100
+            }),
             columnHelper.accessor("bill", {
                 id: "bill",
                 header: "Bill",
@@ -162,14 +174,13 @@ export const VehicleSummaryPage = () => {
                 ),
                 size: 75
             }),
-            columnHelper.accessor("vehicle", {
-                id: "vehicle",
-                header: "Vehicle",
+            columnHelper.accessor("amt", {
+                id: "bill_amt",
+                header: "Amount",
                 enableSorting: true,
-                cell: ({ getValue }) => getValue(),
-                size: 100
+                cell: ({ getValue }) => `₹${parseInt(getValue()).toLocaleString("en-IN")}`,
+                size: 50
             }),
-
             columnHelper.accessor("party", {
                 id: "party",
                 header: "Party",
@@ -177,11 +188,11 @@ export const VehicleSummaryPage = () => {
                 cell: ({ getValue }) => getValue(),
                 size: 200
             }),
-            columnHelper.accessor("bill_date", {
-                id: "bill_date",
-                header: "Bill Date",
+            columnHelper.accessor("vehicle", {
+                id: "vehicle",
+                header: "Vehicle",
                 enableSorting: true,
-                cell: ({ getValue }) => getValue() ? new Date(getValue()).toLocaleDateString('en-IN') : "-",
+                cell: ({ getValue }) => getValue(),
                 size: 100
             }),
             columnHelper.accessor("loading_time", {
@@ -246,7 +257,22 @@ export const VehicleSummaryPage = () => {
                 }} />
             </div>
             <VehicleFilters filters={filters} setFilters={setFilters} />
-            <DataTable table={table} />
+            <DataTable
+                table={table}
+                onRowEnter={(row) => {
+                    //Only if not delivered
+                    if (!row.delivery_time) {
+                        setSelectedBill(row);
+                        setIsDialogOpen(true);
+                    }
+                }}
+            />
+            <BillActionDialog
+                bill={selectedBill}
+                open={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+            />
         </div>
+
     );
 };
