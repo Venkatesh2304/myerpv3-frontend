@@ -16,6 +16,8 @@ import { format, subDays } from "date-fns";
 import { DebouncedInput } from "@/components/ui/debounced-input";
 import { ScanSummaryDialog } from "./components/ScanSummaryDialog";
 import { BillActionDialog } from "./components/BillActionDialog";
+import { VehicleGenerationDialog } from "./components/VehicleGenerationDialog";
+import { CaptchaProvider } from "@/components/custom/CaptchaProvider";
 
 
 const TYPE_OPTIONS = [
@@ -115,7 +117,7 @@ const VehicleFilters: React.FC<{
                         />
                     </div> */}
 
-                    <div className="flex flex-col space-y-2 col-span-2">
+                    <div className="flex flex-col space-y-2">
                         <Label className="text-xs">Party</Label>
                         <ResourceCombobox
                             resource="party"
@@ -248,7 +250,10 @@ export const VehicleSummaryPage = () => {
 
     return (
         <div className="container max-w-full">
-            <div className="flex justify-end mb-2">
+            <div className="flex justify-end mb-2 gap-2">
+                <CaptchaProvider>
+                    <VehicleGenerationDialog />
+                </CaptchaProvider>
                 <ScanSummaryDialog onFilterClick={(date, type, field) => {
                     setFilters([
                         { field: field, operator: "eq", value: date },
