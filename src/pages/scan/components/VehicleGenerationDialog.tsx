@@ -17,6 +17,9 @@ import { downloadFromFilePath } from "@/lib/download";
 import { httpClient } from "@/lib/dataprovider";
 import { ResourceCombobox } from "@/components/custom/resource-combobox";
 import { useCompany } from "@/providers/company-provider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DatePicker } from "@/components/custom/date-picker";
+import { subDays, format } from "date-fns";
 
 type StepStatus = "idle" | "loading" | "success" | "error";
 
@@ -29,6 +32,8 @@ export const VehicleGenerationDialog = () => {
         impact: { status: "idle" },
         scan_pdf: { status: "idle" },
     });
+    const [ewayDate, setEwayDate] = useState<string>(format(subDays(new Date(), 1), "yyyy-MM-dd"));
+    const [companyEwayStatus, setCompanyEwayStatus] = useState<{ status: StepStatus; info?: string; filepath?: string }>({ status: "idle" });
 
     const { company } = useCompany();
     const captcha = useCaptcha();
@@ -56,7 +61,7 @@ export const VehicleGenerationDialog = () => {
         try {
             const response = await requestWithCaptcha(
                 {
-                    url: "/upload_eway/",
+                    url: "/upload_vehicle_eway/",
                     method: "post",
                     data: { vehicle: vehicleId },
                 },
@@ -107,6 +112,32 @@ export const VehicleGenerationDialog = () => {
         }
     };
 
+    const runCompanyEway = async () => {
+        setCompanyEwayStatus({ status: "loading", info: "Generating Company E-way..." });
+        try {
+            const response = await requestWithCaptcha(
+                {
+                    url: "/upload_company_eway/",
+                    method: "post",
+                    data: {
+                        company: company?.id,
+                        date: ewayDate
+                    },
+                },
+                captcha
+            );
+            const data = response.data;
+            setCompanyEwayStatus({
+                status: "success",
+                info: data.info || "E-way generated",
+                filepath: data.filepath
+            });
+            if (data.filepath) downloadFromFilePath(data.filepath);
+        } catch (error: any) {
+            setCompanyEwayStatus({ status: "error", info: error?.response?.data?.error || error.message });
+        }
+    };
+
     const handleGenerateAll = async () => {
         setIsGeneratingAll(true);
 
@@ -136,6 +167,8 @@ export const VehicleGenerationDialog = () => {
             scan_pdf: { status: "idle" },
         });
         setIsGeneratingAll(false);
+        setCompanyEwayStatus({ status: "idle" });
+        setEwayDate(format(subDays(new Date(), 1), "yyyy-MM-dd"));
     };
 
     const StepItem = ({ id, label, runAction }: { id: string; label: string; runAction: () => Promise<void> }) => {
@@ -183,50 +216,110 @@ export const VehicleGenerationDialog = () => {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[450px]">
                 <DialogHeader>
-                    <DialogTitle>Vehicle Generation</DialogTitle>
+                    <DialogTitle>Generation Center</DialogTitle>
                     <DialogDescription>
-                        Select a vehicle and run generations.
+                        Generate E-way bills, Impact data, and Scan summaries
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="flex flex-col gap-4 py-4">
-                    <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium">Select Vehicle</label>
-                        <ResourceCombobox
-                            resource="vehicle"
-                            labelKey="name"
-                            valueKey="id"
-                            value={vehicleId || ""}
-                            onValueChange={setVehicleId}
-                            filters={[
-                                {
-                                    field: "company",
-                                    operator: "eq",
-                                    value: company?.id,
-                                }
-                            ]}
-                        />
-                    </div>
+                <Tabs defaultValue="vehicle" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="vehicle">Vehicle</TabsTrigger>
+                        <TabsTrigger value="eway">Eway</TabsTrigger>
+                    </TabsList>
 
-                    <div className="flex flex-col gap-3">
-                        <StepItem id="eway" label="E-way Generation" runAction={runEway} />
-                        <StepItem id="impact" label="Impact Generation" runAction={runImpact} />
-                        <StepItem id="scan_pdf" label="Scan Summary" runAction={runScanSummary} />
-                    </div>
-                </div>
+                    <TabsContent value="vehicle">
+                        <div className="flex flex-col gap-4 py-4">
+                            <div className="flex items-end gap-2">
+                                <div className="flex flex-col gap-2 flex-1">
+                                    <label className="text-sm font-medium">Select Vehicle</label>
+                                    <ResourceCombobox
+                                        resource="vehicle"
+                                        labelKey="name"
+                                        valueKey="id"
+                                        value={vehicleId || ""}
+                                        onValueChange={setVehicleId}
+                                        filters={[
+                                            {
+                                                field: "company",
+                                                operator: "eq",
+                                                value: company?.id,
+                                            }
+                                        ]}
+                                    />
+                                </div>
+                                <Button
+                                    onClick={handleGenerateAll}
+                                    disabled={!vehicleId || isGeneratingAll || (steps.eway.status !== "idle" && steps.eway.status !== "error")}
+                                    className="mb-[1px]"
+                                >
+                                    {isGeneratingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate All"}
+                                </Button>
+                            </div>
 
-                <DialogFooter className="flex items-center justify-between sm:justify-between w-full">
-                    <Button variant="ghost" onClick={() => setOpen(false)}>
+                            <div className="flex flex-col gap-3">
+                                <StepItem id="eway" label="E-way Generation" runAction={runEway} />
+                                <StepItem id="impact" label="Impact Generation" runAction={runImpact} />
+                                <StepItem id="scan_pdf" label="Scan Summary" runAction={runScanSummary} />
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="eway">
+                        <div className="flex flex-col gap-4 py-4">
+                            <div className="flex items-end gap-2">
+                                <div className="flex flex-col gap-2 flex-1">
+                                    <label className="text-sm font-medium">Select Bill Date</label>
+                                    <DatePicker
+                                        value={ewayDate}
+                                        onChange={(d) => d && setEwayDate(d)}
+                                    />
+                                </div>
+                                <Button
+                                    onClick={runCompanyEway}
+                                    disabled={companyEwayStatus.status === "loading"}
+                                    className="mb-[1px]"
+                                >
+                                    {companyEwayStatus.status === "loading" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate"}
+                                </Button>
+                            </div>
+
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center justify-between p-3 border rounded-lg bg-card">
+                                    <div className="flex items-center gap-3">
+                                        {companyEwayStatus.status === "loading" && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+                                        {companyEwayStatus.status === "success" && <CheckCircle2 className="h-5 w-5 text-green-500" />}
+                                        {companyEwayStatus.status === "error" && <XCircle className="h-5 w-5 text-red-500" />}
+                                        {companyEwayStatus.status === "idle" && <div className="h-5 w-5 rounded-full border-2 border-muted" />}
+
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium">Company E-way Generation</span>
+                                            {companyEwayStatus.info && <span className="text-xs text-muted-foreground">{companyEwayStatus.info}</span>}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        {companyEwayStatus.filepath && companyEwayStatus.status === "success" && (
+                                            <Button variant="ghost" size="icon" onClick={() => downloadFromFilePath(companyEwayStatus.filepath!)}>
+                                                <FileDown className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                        {(companyEwayStatus.status === "error" || companyEwayStatus.status === "success") && (
+                                            <Button variant="ghost" size="icon" onClick={runCompanyEway}>
+                                                <RefreshCw className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </TabsContent>
+                </Tabs>
+
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => setOpen(false)} className="w-full">
                         Close
                     </Button>
-                    {vehicleId && (
-                        <Button
-                            onClick={handleGenerateAll}
-                            disabled={isGeneratingAll || (steps.eway.status !== "idle" && steps.eway.status !== "error")}
-                        >
-                            {isGeneratingAll ? "Generating..." : "Generate All"}
-                        </Button>
-                    )}
                 </DialogFooter>
             </DialogContent>
         </Dialog>
