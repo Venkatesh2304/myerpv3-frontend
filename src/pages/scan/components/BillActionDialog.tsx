@@ -233,8 +233,8 @@ export const BillActionDialog: React.FC<BillActionDialogProps> = ({
                                         <Label htmlFor="cash">Cash Bill</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="Sales Return" id="sales-return" />
-                                        <Label htmlFor="sales-return">Sales Return</Label>
+                                        <RadioGroupItem value="Salesman Pickup" id="salesman-pickup" />
+                                        <Label htmlFor="salesman-pickup">Salesman Pickup</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="Others" id="others" />
