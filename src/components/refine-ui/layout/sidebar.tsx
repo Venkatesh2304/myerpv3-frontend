@@ -36,7 +36,7 @@ export function Sidebar() {
   const { menuItems, selectedKey } = useMenu();
   const { data: user, isLoading: userIsLoading } = useGetIdentity<any>();
 
-  const GST_RESOURCES = ["gstx"];
+  const GST_RESOURCES = ["gst"];
   const filteredMenuItems = useMemo(() => {
     if (!user) return [];
     if (user?.id?.endsWith("_gst")) {
