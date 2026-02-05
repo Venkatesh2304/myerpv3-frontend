@@ -22,17 +22,33 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import {
+  useGetIdentity,
   useLink,
   useMenu,
   useRefineOptions,
   type TreeMenuItem,
 } from "@refinedev/core";
 import { ChevronRight, ListIcon } from "lucide-react";
-import React from "react";
+import React, { useMemo } from "react";
 
 export function Sidebar() {
   const { open } = useShadcnSidebar();
   const { menuItems, selectedKey } = useMenu();
+  const { data: user, isLoading: userIsLoading } = useGetIdentity<any>();
+
+  const GST_RESOURCES = ["gstx"];
+  const filteredMenuItems = useMemo(() => {
+    if (!user) return [];
+    if (user?.id?.endsWith("_gst")) {
+      return menuItems.filter((item: TreeMenuItem) => {
+        return GST_RESOURCES.includes(item?.name);
+      })
+    } else {
+      return menuItems.filter((item: TreeMenuItem) => {
+        return !GST_RESOURCES.includes(item?.name);
+      })
+    }
+  }, [menuItems, user]);
 
   return (
     <ShadcnSidebar collapsible="icon" className={cn("border-none")}>
@@ -55,7 +71,7 @@ export function Sidebar() {
           }
         )}
       >
-        {menuItems.map((item: TreeMenuItem) => (
+        {filteredMenuItems.map((item: TreeMenuItem) => (
           <SidebarItem
             key={item.key || item.name}
             item={item}

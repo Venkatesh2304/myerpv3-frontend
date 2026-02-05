@@ -1,4 +1,6 @@
-import { Authenticated, GitHubBanner, Refine, useNotification } from "@refinedev/core";
+
+
+import { Authenticated, CanAccess, GitHubBanner, Refine, useNotification } from "@refinedev/core";
 import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
@@ -24,7 +26,7 @@ import { BillingList } from "@/pages/billing";
 import { ReportsList } from "@/pages/reports/list";
 import { dataProvider } from "./lib/dataprovider";
 import { authProvider } from "./lib/authprovider";
-import { BookOpenTextIcon, LandmarkIcon, PrinterIcon, ScrollTextIcon, Building2Icon, SettingsIcon, FileTextIcon, CameraIcon, TruckIcon } from "lucide-react";
+import { BookOpenTextIcon, LandmarkIcon, PrinterIcon, ScrollTextIcon, Building2Icon, SettingsIcon, FileTextIcon, CameraIcon, TruckIcon, BadgePercent } from "lucide-react";
 import { Login } from "./pages/login";
 import { CompanyProvider, useCompany } from "./providers/company-provider";
 import { useEffect } from "react";
@@ -32,11 +34,43 @@ import { CompanyRouteWrapper } from "./components/company-route-wrapper";
 import { SettingsPage } from "./pages/settings";
 import { ScanPage } from "./pages/scan";
 import { SummaryPage } from "./pages/scan/summaryIndex";
+import { GstList } from "./pages/gst";
+
+export const GstIcon = ({ size = 24, ...props }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 80 100"
+    fill="currentColor" // This is the secret sauce
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    {/* Using a mask ensures the SVG acts exactly like a Lucide path */}
+    <rect
+      width="80"
+      height="100"
+      mask="url(#gst-mask)"
+      fill="currentColor"
+    />
+    <defs>
+      <mask id="gst-mask">
+        <image
+          href="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg"
+          width="80"
+          height="100"
+          style={{ filter: "brightness(0) invert(1)" }}
+        />
+      </mask>
+    </defs>
+  </svg>
+);
+
 function App() {
   return (
     <BrowserRouter>
       <RefineKbarProvider>
         <ThemeProvider defaultTheme="light">
+
           <Refine
             dataProvider={dataProvider}
             notificationProvider={useNotificationProvider()}
@@ -111,6 +145,14 @@ function App() {
                   icon: <SettingsIcon />
                 },
               },
+              {
+                name: "gst",
+                list: "/gst",
+                meta: {
+                  label: "GST",
+                  icon: <GstIcon />
+                },
+              },
             ]}
             options={{
               title: {
@@ -166,6 +208,9 @@ function App() {
                 </Route>
                 <Route path="/scan">
                   <Route index element={<CompanyRouteWrapper Component={ScanPage} />} />
+                </Route>
+                <Route path="/gst">
+                  <Route index element={<CompanyRouteWrapper Component={GstList} />} />
                 </Route>
                 <Route path="*" element={<ErrorComponent />} />
               </Route>

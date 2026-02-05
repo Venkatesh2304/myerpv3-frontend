@@ -23,6 +23,14 @@ import { subDays, format } from "date-fns";
 
 type StepStatus = "idle" | "loading" | "success" | "error";
 
+const getEwayDefaultDate = () => {
+    const yesterday = subDays(new Date(), 1);
+    if (yesterday.getDay() === 0) {
+        return format(subDays(new Date(), 2), "yyyy-MM-dd");
+    }
+    return format(yesterday, "yyyy-MM-dd");
+};
+
 export const VehicleGenerationDialog = () => {
     const [open, setOpen] = useState(false);
     const [vehicleId, setVehicleId] = useState<string | null>(null);
@@ -32,7 +40,7 @@ export const VehicleGenerationDialog = () => {
         impact: { status: "idle" },
         scan_pdf: { status: "idle" },
     });
-    const [ewayDate, setEwayDate] = useState<string>(format(subDays(new Date(), 1), "yyyy-MM-dd"));
+    const [ewayDate, setEwayDate] = useState<string>(getEwayDefaultDate());
     const [companyEwayStatus, setCompanyEwayStatus] = useState<{ status: StepStatus; info?: string; filepath?: string }>({ status: "idle" });
 
     const { company } = useCompany();
@@ -168,7 +176,7 @@ export const VehicleGenerationDialog = () => {
         });
         setIsGeneratingAll(false);
         setCompanyEwayStatus({ status: "idle" });
-        setEwayDate(format(subDays(new Date(), 1), "yyyy-MM-dd"));
+        setEwayDate(getEwayDefaultDate());
     };
 
     const StepItem = ({ id, label, runAction }: { id: string; label: string; runAction: () => Promise<void> }) => {

@@ -15,7 +15,7 @@ export const authProvider: AuthProvider = {
             sessionStorage.setItem("accessToken", res.data?.access);
             return {
                 success: true,
-                redirectTo: "/billing"
+                redirectTo: username?.endsWith("_gst") ? "/gst" : "/billing"
             }
         }).catch((err) => {
             return {
