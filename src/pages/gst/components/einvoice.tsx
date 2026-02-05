@@ -57,15 +57,6 @@ export function EInvoiceContent() {
         }
     }, [period, type, captcha]);
 
-    useEffect(() => {
-        if (isFirstRun.current) {
-            isFirstRun.current = false;
-            return;
-        }
-        if (period) {
-            onGenerate();
-        }
-    }, [period, type, onGenerate]);
 
     const canFile = Array.isArray(rows) && rows.length > 0 && rows.some((r) => Number(r.not_filed) > 0);
 
@@ -177,10 +168,10 @@ export function EInvoiceContent() {
             </div>
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row">
-                    <Period className="flex-1" onPeriodChange={useCallback((p: string) => setPeriod(p), [])} />
+                    <Period className="flex-1" onPeriodChange={useCallback((p: string) => { setPeriod(p); setRows(null); }, [])} />
                     <div className="flex-1 space-y-2">
                         <Label htmlFor="einvoice-type">Type</Label>
-                        <Select value={type} onValueChange={setType}>
+                        <Select value={type} onValueChange={(v) => { setType(v); setRows(null); }}>
                             <SelectTrigger id="einvoice-type">
                                 <SelectValue placeholder="Select type" />
                             </SelectTrigger>
