@@ -37,15 +37,16 @@ export function Sidebar() {
   const { data: user, isLoading: userIsLoading } = useGetIdentity<any>();
 
   const GST_RESOURCES = ["gst"];
+  const ALL_RESOURCES = ["settings"];
   const filteredMenuItems = useMemo(() => {
     if (!user) return [];
     if (user?.id?.endsWith("_gst")) {
       return menuItems.filter((item: TreeMenuItem) => {
-        return GST_RESOURCES.includes(item?.name);
+        return GST_RESOURCES.includes(item?.name) || ALL_RESOURCES.includes(item?.name);
       })
     } else {
       return menuItems.filter((item: TreeMenuItem) => {
-        return !GST_RESOURCES.includes(item?.name);
+        return !GST_RESOURCES.includes(item?.name) || ALL_RESOURCES.includes(item?.name);
       })
     }
   }, [menuItems, user]);
