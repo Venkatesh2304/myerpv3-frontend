@@ -138,19 +138,19 @@ function App() {
                 },
               },
               {
-                name: "settings",
-                list: "/settings",
-                meta: {
-                  label: "Settings",
-                  icon: <SettingsIcon />
-                },
-              },
-              {
                 name: "gst",
                 list: "/gst",
                 meta: {
                   label: "GST",
                   icon: <GstIcon />
+                },
+              },
+              {
+                name: "settings",
+                list: "/settings",
+                meta: {
+                  label: "Settings",
+                  icon: <SettingsIcon />
                 },
               },
             ]}
