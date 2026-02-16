@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { TruckScanPage } from "./truckScan";
 import { LoadScanPage, DeliveryScanPage } from "./vehicleScan";
+import { SalesScanPage } from "./salesScan";
 import { Button } from "@/components/ui/button";
-import { Truck, PackagePlus, PackageCheck } from "lucide-react";
+import { Truck, PackagePlus, PackageCheck, ScanLine } from "lucide-react";
 
 export const ScanPage = () => {
-    const [mode, setMode] = useState<"truck" | "load" | "delivery" | null>(null);
+    const [mode, setMode] = useState<"truck" | "load" | "delivery" | "sales" | null>(null);
 
     if (!mode) {
         return (
@@ -19,6 +20,14 @@ export const ScanPage = () => {
                     >
                         <Truck className="h-12 w-12" />
                         Lorry Load
+                    </Button>
+                    <Button
+                        variant="outline"
+                        className="h-40 w-40 flex flex-col gap-4 text-xl hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => setMode("sales")}
+                    >
+                        <ScanLine className="h-12 w-12" />
+                        Sales Scan
                     </Button>
                     <Button
                         variant="outline"
@@ -44,6 +53,7 @@ export const ScanPage = () => {
     return (
         <div className="">
             {mode === "truck" && <TruckScanPage />}
+            {mode === "sales" && <SalesScanPage onBack={() => setMode(null)} />}
             {mode === "load" && <LoadScanPage onBack={() => setMode(null)} />}
             {mode === "delivery" && <DeliveryScanPage onBack={() => setMode(null)} />}
         </div>
