@@ -430,6 +430,7 @@ export function SalesScanPage({ onBack }: { onBack: () => void }) {
                 if (config.invoiceMap[sku] && config.invoiceMap[sku][mrp] !== undefined) {
                     updateScannedItem(sku, mrp, 1, true);
                     form.setValue("input", "");
+                    focusInput();
                     return;
                 }
             }
@@ -441,6 +442,7 @@ export function SalesScanPage({ onBack }: { onBack: () => void }) {
             const matches = mrps.map(mrp => ({ sku: input, mrp }));
             handlePotentialMatches(matches);
             form.setValue("input", "");
+            focusInput();
             return;
         }
 
