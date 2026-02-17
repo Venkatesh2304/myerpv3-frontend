@@ -1,0 +1,706 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { dataProvider } from "@/lib/dataprovider";
+import { useNotification } from "@refinedev/core";
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { EditItemDialog } from "@/components/scan/edit-item-dialog";
+import { ScanConfirmationAlert } from "@/components/scan/scan-confirmation-alert";
+import { SaveConfirmationDialog } from "@/components/scan/save-confirmation-dialog";
+import { ScannedItemsTable, QtyMap } from "@/components/scan/scanned-items-table";
+import { useScanLogic } from "@/hooks/use-scan-logic";
+import { BarcodeInputSales, SuggestionOption } from "@/components/scan/barcode-input-sales";
+import { downloadFromFilePath } from "@/lib/download";
+import { AddBarcodeDialog } from "@/components/scan/add-barcode-dialog";
+
+interface SalesScanConfig {
+    invoiceMap: QtyMap;
+    case_config: Record<string, number>;
+    barcode_map: Record<string, string[]>;
+    sku_list: string[];
+    box_count: number;
+    cbu_map: Record<string, string[]>;
+    sku_name_map?: Record<string, string>;
+}
+
+interface MismatchItem {
+    sku: string;
+    name?: string;
+    mrp: number;
+    billed: number;
+    scanned: number;
+}
+
+interface ScanLogItem {
+    type: "manual" | "scan_barcode" | "scan_cbu";
+    sku: string;
+    mrp: number;
+    qty: number;
+    data: string;
+    timestamp: number;
+}
+
+function ConflictResolverDialog({ open, onOpenChange, title, options, onSelect }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    title: string;
+    options: { label: string; value: any }[];
+    onSelect: (value: any) => void;
+}) {
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    useEffect(() => {
+        audioRef.current = new Audio("/notification.mp3");
+    }, []);
+
+    useEffect(() => {
+        if (open) {
+            audioRef.current?.play().catch(e => console.error("Error playing sound", e));
+        }
+    }, [open]);
+
+    if (!open) return null;
+
+    return (
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{title}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Please select the correct product.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="grid gap-2">
+                    {options.map((option, idx) => (
+                        <Button
+                            key={idx}
+                            variant="outline"
+                            className="justify-start h-auto py-2 px-4"
+                            onClick={() => {
+                                onSelect(option.value);
+                                onOpenChange(false);
+                            }}
+                        >
+                            {option.label}
+                        </Button>
+                    ))}
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => onOpenChange(false)}>Cancel</AlertDialogCancel>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+}
+
+function BillSummaryDialog({ open, onOpenChange, items, onDownload }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    items: MismatchItem[];
+    onDownload: () => void;
+}) {
+    if (!open) return null;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-md w-[95vw] max-h-[90vh] flex flex-col p-0">
+                <DialogHeader className="p-4 border-b">
+                    <div className="flex justify-between items-center pr-10">
+                        <DialogTitle>Mismatch</DialogTitle>
+                        <Button onClick={onDownload} variant="secondary" size="sm">
+                            Download
+                        </Button>
+                    </div>
+                </DialogHeader>
+                <div className="flex-1 overflow-auto p-4 space-y-3">
+                    {items.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                            No data found
+                        </div>
+                    ) : (
+                        items.map((item, idx) => {
+                            const isMismatch = item.billed !== item.scanned;
+                            return (
+                                <div
+                                    key={idx}
+                                    className={`p-3 rounded-lg border ${isMismatch
+                                        ? "bg-red-50/50 border-red-200"
+                                        : "bg-card border-border"
+                                        }`}
+                                >
+                                    <div className="font-medium text-sm leading-tight mb-2">
+                                        {item.name || item.sku}
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-xs">
+                                        <div>
+                                            <div className="text-muted-foreground mb-0.5">MRP</div>
+                                            <div className="font-semibold">₹{item.mrp}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-muted-foreground mb-0.5 text-center">Billed</div>
+                                            <div className="font-semibold text-center">{item.billed}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-muted-foreground mb-0.5 text-right">Scanned</div>
+                                            <div className={`font-bold text-right ${isMismatch ? "text-red-600" : "text-green-600"}`}>
+                                                {item.scanned}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+interface ScanningInterfaceProps {
+    scanId: string;
+    billNo: string;
+    onBack: () => void;
+}
+
+export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceProps) {
+    const { open } = useNotification();
+    const [config, setConfig] = useState<SalesScanConfig | null>(null);
+
+    const {
+        currentScanned,
+        setCurrentScanned,
+        lastScanned,
+        setLastScanned,
+        updateScannedItem,
+        scannedCount,
+        flattenedScannedItems
+    } = useScanLogic();
+
+    const [box, setBox] = useState<any>(null);
+    const [maxBox, setMaxBox] = useState<any>(null);
+    const [otherScanned, setOtherScanned] = useState<QtyMap>({});
+    const [editingItem, setEditingItem] = useState<{ cbu: string; mrp: number; qty: number } | null>(null);
+
+    const [alertConfig, setAlertConfig] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
+    const [alertOpen, setAlertOpen] = useState(false);
+    const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+    const [conflictDialog, setConflictDialog] = useState<{
+        open: boolean;
+        title: string;
+        options: { label: string; value: any }[];
+        onSelect: (value: any) => void;
+    }>({ open: false, title: "", options: [], onSelect: () => { } });
+
+    // New Features States
+    const [scanLogs, setScanLogs] = useState<ScanLogItem[]>([]);
+    const [addBarcodeDialog, setAddBarcodeDialog] = useState<{ open: boolean, barcode: string }>({ open: false, barcode: "" });
+
+    // Summary Dialog State
+    const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
+    const [mismatchData, setMismatchData] = useState<MismatchItem[]>([]);
+
+    const inputRef = useRef<HTMLInputElement>(null);
+    const form = useForm({ defaultValues: { input: "" } });
+
+    const focusInput = () => setTimeout(() => inputRef.current?.focus(), 300);
+
+    // Calculate total items in current box
+    const currentBoxTotal = useMemo(() => {
+        return Object.values(currentScanned).reduce((acc, m) => acc + Object.values(m).reduce((s, q) => s + q, 0), 0);
+    }, [currentScanned]);
+
+    // Helpers
+    const getInvoiceItem = (sku: string) => config?.invoiceMap[sku];
+
+    const addLog = (type: ScanLogItem["type"], sku: string, mrp: number, qty: number, data: string) => {
+        setScanLogs(prev => [...prev, {
+            type,
+            sku,
+            mrp,
+            qty,
+            data,
+            timestamp: Date.now()
+        }]);
+    };
+
+    // Wrapper for updateScannedItem to include logging
+    const handleUpdateScannedItem = (sku: string, mrp: number, qty: number, isAdd: boolean, logData?: { type: ScanLogItem["type"], data: string }) => {
+        updateScannedItem(sku, mrp, qty, isAdd);
+        if (isAdd && logData) {
+            addLog(logData.type, sku, mrp, qty, logData.data);
+        }
+    };
+
+
+    const handleDownloadSummary = async () => {
+        if (!scanId) return;
+        try {
+            const res = await dataProvider.custom({
+                url: "sales_scan_summary/",
+                method: "post",
+                payload: { scan_id: scanId }
+            });
+            if (res.data?.filepath) {
+                await downloadFromFilePath(res.data.filepath);
+                open?.({ type: "success", message: "Summary Downloaded" });
+            } else {
+                open?.({ type: "error", message: "No file generated" });
+            }
+        } catch (error) {
+            open?.({ type: "error", message: "Download Failed" });
+        }
+    };
+
+    const handleBillClick = async () => {
+        if (!scanId) return;
+        setSummaryDialogOpen(true);
+        setMismatchData([]); // Clear previous data
+        try {
+            const res = await dataProvider.custom({
+                url: "sales_scan_mismatch/",
+                method: "post",
+                payload: { scan_id: scanId }
+            });
+
+            if (Array.isArray(res.data)) {
+                setMismatchData(res.data);
+            } else {
+                // Fallback attempt
+                setMismatchData(res.data?.mismatches || []);
+            }
+        } catch (error) {
+            open?.({ type: "error", message: "Failed to fetch scan summary" });
+        }
+    };
+
+    useEffect(() => {
+        if (scanId) {
+            dataProvider.getOne({
+                resource: "sales_scan",
+                id: scanId,
+            }).then((res) => {
+                setConfig({
+                    ...res.data,
+                    invoiceMap: res.data.bill_qty_map || res.data.invoiceMap,
+                    cbu_map: res.data.cbu_map || res.data.cbu_to_sku_map,
+                    sku_name_map: res.data.sku_name_map || {}
+                });
+                setBox(res.data.box_count);
+                setMaxBox(res.data.box_count);
+            });
+        }
+    }, [scanId]);
+
+    useEffect(() => {
+        if (!box || !scanId) return;
+        dataProvider.custom({
+            url: "sales_box",
+            method: "get",
+            query: { box_no: box, scan_id: scanId }
+        }).then((res) => {
+            setOtherScanned(res.data.others_scanned || {});
+            setCurrentScanned(res.data.current_scanned || {});
+            setScanLogs([]); // Reset logs when box changes/loads
+        });
+    }, [box, scanId]);
+
+
+    const handlePotentialMatches = (matches: { sku: string; mrp: number }[], qty: number = 1, type: ScanLogItem["type"], data: string) => {
+        if (matches.length === 0) {
+            // Should be handled by caller usually, but safe fallback
+            return;
+        } else if (matches.length === 1) {
+            handleUpdateScannedItem(matches[0].sku, matches[0].mrp, qty, true, { type, data });
+        } else {
+            setConflictDialog({
+                open: true,
+                title: "Select Product",
+                options: matches.map(o => {
+                    const name = config?.sku_name_map?.[o.sku];
+                    return {
+                        label: `${o.sku} ${name ? `(${name})` : ""} - Rs. ${o.mrp}`,
+                        value: o
+                    };
+                }),
+                onSelect: (val) => handleUpdateScannedItem(val.sku, val.mrp, qty, true, { type, data })
+            });
+        }
+    };
+
+    const processInput = async (input: string) => {
+        input = input.trim();
+        if (!input || !config) return;
+
+        // --- CBU Detection ---
+        let cbuCode = input;
+        const isCbu = input.length > 20 && input.includes("(241)");
+
+        if (isCbu) {
+            if (input.includes("(241)") && input.includes("(10)")) {
+                try {
+                    cbuCode = input.split("(241)")[1].split("(10)")[0].trim().toUpperCase();
+                } catch (e) {
+                    console.error("Error parsing GS1 CBU", e);
+                }
+            }
+
+            if (config.cbu_map && config.cbu_map[cbuCode]) {
+                const mappedSkus = config.cbu_map[cbuCode];
+                const skuList = Array.isArray(mappedSkus) ? mappedSkus : [mappedSkus];
+
+                if (skuList.length === 0) {
+                    setAlertConfig({
+                        title: "Unknown CBU",
+                        description: "CBU Code mapped to empty SKU list",
+                        onConfirm: () => { }
+                    });
+                    setAlertOpen(true);
+                    return;
+                }
+
+                const validOptions: { sku: string; mrp: number }[] = [];
+                let detectedCaseQty = 0;
+
+                skuList.forEach(sku => {
+                    if (config.invoiceMap[sku]) {
+                        const q = config.case_config?.[sku];
+                        if (q && detectedCaseQty === 0) detectedCaseQty = q;
+                        Object.keys(config.invoiceMap[sku]).forEach(mrp => {
+                            validOptions.push({ sku, mrp: Number(mrp) });
+                        });
+                    }
+                });
+
+                if (validOptions.length > 0) {
+                    handlePotentialMatches(validOptions, detectedCaseQty || 1, "scan_cbu", input);
+                } else {
+                    setAlertConfig({
+                        title: "SKU Not in Invoice",
+                        description: `CBU mapped SKUs (${skuList.join(", ")}) not found in this bill.`,
+                        onConfirm: () => { }
+                    });
+                    setAlertOpen(true);
+                }
+                return;
+            } else {
+                setAlertConfig({
+                    title: "Unknown Scan",
+                    description: "Unknown CBU Code.",
+                    onConfirm: () => { }
+                });
+                setAlertOpen(true);
+                return;
+            }
+        }
+
+        // --- Barcode Detection ---
+        // Assume non-CBU logic treats as potential Barcode or Manual fallback
+
+        // 1. Check Local Config
+        if (config.barcode_map[input]) {
+            const skus = config.barcode_map[input];
+            const validOptions: { sku: string; mrp: number }[] = [];
+            skus.forEach(sku => {
+                if (config.invoiceMap[sku]) {
+                    Object.keys(config.invoiceMap[sku]).forEach(mrp => {
+                        validOptions.push({ sku, mrp: Number(mrp) });
+                    });
+                }
+            });
+
+            if (validOptions.length > 0) {
+                handlePotentialMatches(validOptions, 1, "scan_barcode", input);
+                return;
+            }
+            // If recognized barcode but no valid options in bill -> falls through to API check? 
+            // Or better to fail fast? If it's in barcode_map but not in bill, it effectively means "Not in Bill"
+            // We should use the "Feature 1" logic even here? No, user said "If barcode is not found i will have a get call".
+            // If it IS found locally (in barcode_map) but not in bill, we should probably just alert.
+            setAlertConfig({
+                title: "Not in Bill",
+                description: "Product found in database but not in this bill.",
+                onConfirm: () => { }
+            });
+            setAlertOpen(true);
+            return;
+        }
+
+        // 2. Not in Local Config -> API Lookup
+        try {
+            const res = await dataProvider.custom({
+                url: "barcode/",
+                method: "get",
+                query: { code: input }
+            });
+
+            // Expected response: { products: [{ sku: string, mrp: number, name: string }], basepack: string | null }
+            const responseData = res.data || { products: [], basepack: null };
+            const products: { sku: string, mrp: number, name?: string }[] = responseData.products || [];
+            const basepack = responseData.basepack;
+
+            if (basepack === null) {
+                // No products found or truly unknown
+                setAddBarcodeDialog({ open: true, barcode: input });
+            } else {
+                // basepack is not null -> found products
+                if (products.length > 0) {
+                    // Update local name map
+                    if (config) {
+                        const newNameMap = { ...config.sku_name_map };
+                        products.forEach(item => {
+                            if (item.name && !newNameMap[item.sku]) {
+                                newNameMap[item.sku] = item.name.trim();
+                            }
+                        });
+                        setConfig({ ...config, sku_name_map: newNameMap });
+                    }
+
+                    // Check if any product is in the current bill
+                    const validOptions = products.filter(item =>
+                        config.invoiceMap[item.sku] &&
+                        config.invoiceMap[item.sku][item.mrp] !== undefined
+                    );
+
+                    if (validOptions.length > 0) {
+                        handlePotentialMatches(validOptions, 1, "scan_barcode", input);
+                    } else {
+                        // SKU matches exist but NOT in this bill
+                        const first = products[0];
+                        setAlertConfig({
+                            title: "Product Not in Bill",
+                            description: (
+                                <div className="space-y-2 mt-2">
+                                    <div className="text-sm font-medium">Scanned: {input}</div>
+                                    <div className="p-3 bg-muted rounded-lg border">
+                                        <div className="font-bold text-primary">{first.sku}</div>
+                                        <div className="text-xs text-muted-foreground uppercase mt-1 leading-tight">{first.name}</div>
+                                        <div className="text-sm font-semibold mt-2">MRP: ₹{first.mrp}</div>
+                                    </div>
+                                    <div className="text-xs text-destructive font-medium mt-1">
+                                        This product is listed in the master but is not present in the current bill.
+                                    </div>
+                                </div>
+                            ),
+                            onConfirm: () => { }
+                        });
+                        setAlertOpen(true);
+                    }
+                } else {
+                    // basepack not null but products empty? fallback to dialog
+                    setAddBarcodeDialog({ open: true, barcode: input });
+                }
+            }
+        } catch (error) {
+            // API Error or 404
+            setAddBarcodeDialog({ open: true, barcode: input });
+        }
+    };
+
+    const handleScan = (input: string) => {
+        processInput(input);
+        form.setValue("input", "");
+    };
+
+    const handleManualSelect = (option: SuggestionOption) => {
+        handleUpdateScannedItem(option.value.sku, option.value.mrp, 1, true, {
+            type: "manual",
+            data: "manual_select"
+        });
+        focusInput();
+    };
+
+
+    const suggestions = useMemo(() => {
+        if (!config) return [];
+        const options: SuggestionOption[] = [];
+        Object.entries(config.invoiceMap).forEach(([sku, mrpMap]) => {
+            const name = config.sku_name_map?.[sku];
+            Object.keys(mrpMap).forEach(mrp => {
+                options.push({
+                    label: `${sku} ${name ? `- ${name}` : ""} - ₹${mrp}`,
+                    value: { sku, mrp: Number(mrp), name }
+                });
+            });
+        });
+        return options;
+    }, [config]);
+
+    return (
+        <div className="flex flex-col gap-4 max-w-sm mx-auto">
+
+            <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg border">
+                <div
+                    className="text-xl font-bold font-mono cursor-pointer hover:underline text-blue-600"
+                    onClick={handleBillClick}
+                    title="Click to View Summary"
+                >
+                    {billNo?.toUpperCase()}
+                </div>
+                <Button variant="ghost" size="sm" onClick={onBack} className="h-8 hover:bg-red-100 hover:text-red-600">Exit</Button>
+            </div>
+
+            <div className="flex gap-4">
+                <Label className="w-fit-content">Box No:</Label>
+                <Input className="w-24" value={box || ""} onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (val > maxBox) {
+                        open?.({ type: "error", message: "Box No > Max Box" });
+                        return;
+                    }
+                    setBox(e.target.value);
+                }} />
+                <Label className="w-fit-content ml-auto text-sm">Max Box: {maxBox}</Label>
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); }} className="flex gap-3 flex-col relative">
+                <div className="flex w-full items-start gap-2">
+                    <div className="flex-1">
+                        <BarcodeInputSales
+                            value={form.watch("input")}
+                            onChange={(val) => form.setValue("input", val)}
+                            onScan={handleScan}
+                            onManualSelect={handleManualSelect}
+                            options={suggestions}
+                            placeholder="Scan / Type SKU"
+                            inputRefProp={inputRef}
+                        />
+                    </div>
+                    {/* <Button type="button" onClick={() => handleScan(form.getValues("input"))} className="h-12 w-20">
+                        Enter
+                    </Button> */}
+                </div>
+                <div className="text-center font-bold text-lg">Total Scanned: {scannedCount}</div>
+            </form>
+
+            <ScannedItemsTable
+                items={flattenedScannedItems}
+                purchase={config?.invoiceMap || {}}
+                otherScanned={otherScanned}
+                onEdit={setEditingItem}
+                label="SKU"
+            />
+
+            <Button
+                onClick={() => setSaveDialogOpen(true)}
+                disabled={currentBoxTotal === 0}
+                className="bg-green-500 h-12 text-lg w-[50%] mx-auto mt-2 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400"
+            >
+                Save Box
+            </Button>
+
+            <ScanConfirmationAlert
+                open={alertOpen}
+                onOpenChange={(o) => { if (!o) { setAlertOpen(false); focusInput(); } }}
+                title={alertConfig?.title}
+                description={alertConfig?.description}
+                onConfirm={alertConfig?.onConfirm || (() => { })}
+            />
+
+            <SaveConfirmationDialog
+                open={saveDialogOpen}
+                onOpenChange={(o) => { setSaveDialogOpen(o); if (!o) focusInput(); }}
+                onConfirm={(qty) => {
+                    if (qty === currentBoxTotal) {
+                        dataProvider.custom({
+                            url: "sales_box/",
+                            method: "post",
+                            payload: {
+                                box_no: box,
+                                scan_id: scanId,
+                                scanned: currentScanned,
+                                logs: scanLogs
+                            }
+                        }).then((res) => {
+                            if (res.data.box_no) {
+                                setBox(res.data.box_no);
+                                setMaxBox(res.data.box_no);
+                            }
+                            setSaveDialogOpen(false);
+                            setScanLogs([]);
+                            focusInput();
+                            open?.({ type: "success", message: "Box Saved" });
+                        });
+                    } else {
+                        open?.({ type: "error", message: "Quantity Mismatch" });
+                    }
+                }}
+            />
+
+            <EditItemDialog
+                item={editingItem}
+                open={!!editingItem}
+                onOpenChange={(o) => { if (!o) { setEditingItem(null); focusInput(); } }}
+                onUpdate={(sku, mrp, qty, isAdd) => handleUpdateScannedItem(sku, mrp, qty, isAdd)} // Note: Edits might not need logging or different type? User said "logging of events... type scan/manual". Edit is correction. I'll omit or treat separately. User didn't specify Edit logging, just entry methods.
+                label="SKU"
+            />
+
+            <ConflictResolverDialog
+                open={conflictDialog.open}
+                onOpenChange={(o) => { if (!o) { setConflictDialog(prev => ({ ...prev, open: false })); focusInput(); } }}
+                title={conflictDialog.title}
+                options={conflictDialog.options}
+                onSelect={conflictDialog.onSelect} // This calls regular updateScannedItem logic, handled inside
+            />
+
+            <BillSummaryDialog
+                open={summaryDialogOpen}
+                onOpenChange={(o) => { if (!o) { setSummaryDialogOpen(false); focusInput(); } }}
+                items={mismatchData}
+                onDownload={handleDownloadSummary}
+            />
+
+            <AddBarcodeDialog
+                open={addBarcodeDialog.open}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setAddBarcodeDialog(prev => ({ ...prev, open: false }));
+                        focusInput();
+                    }
+                }}
+                barcode={addBarcodeDialog.barcode}
+                invoiceMap={config?.invoiceMap || {}}
+                skuNameMap={config?.sku_name_map}
+                onSuccess={(sku, mrp) => {
+                    // Update local barcode map and process the item
+                    if (config) {
+                        const newBarcodeMap = { ...(config.barcode_map || {}) };
+                        if (!newBarcodeMap[addBarcodeDialog.barcode]) {
+                            newBarcodeMap[addBarcodeDialog.barcode] = [];
+                        }
+                        if (!newBarcodeMap[addBarcodeDialog.barcode].includes(sku)) {
+                            newBarcodeMap[addBarcodeDialog.barcode].push(sku);
+                        }
+
+                        setConfig({
+                            ...config,
+                            barcode_map: newBarcodeMap
+                        });
+
+                        // Directly add the item as we know it's valid (selected from bill)
+                        handleUpdateScannedItem(sku, mrp, 1, true, {
+                            type: "scan_barcode",
+                            data: addBarcodeDialog.barcode
+                        });
+                    }
+                }}
+            />
+        </div>
+    );
+}

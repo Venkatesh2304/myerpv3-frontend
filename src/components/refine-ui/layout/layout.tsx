@@ -35,9 +35,9 @@ export function Layout({ children }: PropsWithChildren) {
               "flex",
               "flex-col",
               "flex-1",
-              "px-8",
+              "px-4",
               "pt-4",
-              "md:p-4",
+              "md:px-8",
               "lg:px-6",
               "lg:pt-6"
             )}

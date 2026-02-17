@@ -11,7 +11,7 @@ interface BarcodeInputProps {
     inputRefProp?: React.RefObject<HTMLInputElement>;
 }
 
-export function BarcodeInput({
+export function BarcodeInputLoad({
     value,
     onChange,
     onScan,

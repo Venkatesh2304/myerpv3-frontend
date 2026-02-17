@@ -15,7 +15,7 @@ import { ScanConfirmationAlert, ScanConfirmationAlertProps } from "@/components/
 import { SaveConfirmationDialog, SaveConfirmationDialogProps } from "@/components/scan/save-confirmation-dialog"
 import { ScannedItemsTable, QtyMap } from "@/components/scan/scanned-items-table"
 import { useScanLogic } from "@/hooks/use-scan-logic"
-import { BarcodeInput } from "@/components/scan/barcode-input"
+import { BarcodeInputLoad } from "@/components/scan/barcode-input-load"
 
 export function TruckScanPage() {
     const { open } = useNotification();
@@ -194,7 +194,7 @@ export function TruckScanPage() {
                 </div>
 
                 <form onSubmit={form.handleSubmit(onAddSubmit)} className="flex gap-3 flex-col relative">
-                    <BarcodeInput
+                    <BarcodeInputLoad
                         value={cbuValue}
                         onChange={(val) => form.setValue("cbu", val)}
                         onScan={handleScan}
