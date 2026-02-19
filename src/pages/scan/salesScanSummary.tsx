@@ -37,7 +37,7 @@ export const SalesScanSummaryPage = () => {
 
                     if (box_count <= 1) {
                         colorClass = is_posted ? "text-orange-600" : "text-gray-400";
-                    } else if (!mismatches || (Array.isArray(mismatches) && mismatches.length === 0)) {
+                    } else if (mismatches && (Array.isArray(mismatches) && mismatches.length > 0)) {
                         colorClass = "text-red-600";
                     }
 
