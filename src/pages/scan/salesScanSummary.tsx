@@ -64,7 +64,8 @@ export const SalesScanSummaryPage = () => {
             columnHelper.accessor("mismatches", {
                 id: "mismatch_summary",
                 header: "Mismatch",
-                cell: ({ getValue }) => {
+                cell: ({ getValue, row }) => {
+                    if (row.original.box_count <= 1) return "-";
                     const mismatches = getValue();
                     if (!mismatches || !Array.isArray(mismatches) || mismatches.length === 0) return "-";
                     const productCount = mismatches.length;
@@ -92,7 +93,7 @@ export const SalesScanSummaryPage = () => {
             resource: "sales_scan",
             pagination: {
                 mode: "server",
-                pageSize: 10,
+                pageSize: 30,
             },
             syncWithLocation: true,
         },
