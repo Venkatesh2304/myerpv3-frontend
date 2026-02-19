@@ -242,6 +242,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
     // Summary Dialog State
     const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
     const [mismatchData, setMismatchData] = useState<MismatchItem[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
     const form = useForm({ defaultValues: { input: "" } });
@@ -352,7 +353,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
             }
         };
 
-        const handlePopState = (e: PopStateEvent) => {
+        const handlePopState = () => {
             if (currentBoxTotal > 0) {
                 if (window.confirm("You have unsaved scans in this box. Are you sure you want to exit?")) {
                     // User clicked OK, we let them go back.
@@ -659,10 +660,10 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
 
             <Button
                 onClick={() => setSaveDialogOpen(true)}
-                disabled={currentBoxTotal === 0}
+                disabled={currentBoxTotal === 0 || isSaving}
                 className="bg-green-500 h-12 text-lg w-[50%] mx-auto mt-2 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
-                Save Box
+                {isSaving ? "Saving..." : "Save Box"}
             </Button>
 
             <ScanConfirmationAlert
@@ -676,9 +677,11 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
 
             <SaveConfirmationDialog
                 open={saveDialogOpen}
-                onOpenChange={(o) => { setSaveDialogOpen(o); if (!o) focusInput(); }}
+                onOpenChange={(o) => { if (!isSaving) setSaveDialogOpen(o); if (!o) focusInput(); }}
+                loading={isSaving}
                 onConfirm={(qty) => {
                     if (qty === currentBoxTotal) {
+                        setIsSaving(true);
                         dataProvider.custom({
                             url: "sales_box/",
                             method: "post",
@@ -689,14 +692,19 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                                 logs: scanLogs
                             }
                         }).then((res) => {
+                            setCurrentScanned({});
+                            setScanLogs([]);
                             if (res.data.box_no) {
                                 setBox(res.data.box_no);
                                 setMaxBox(res.data.box_no);
                             }
                             setSaveDialogOpen(false);
-                            setScanLogs([]);
                             focusInput();
                             open?.({ type: "success", message: "Box Saved" });
+                        }).catch(() => {
+                            open?.({ type: "error", message: "Failed to save box" });
+                        }).finally(() => {
+                            setIsSaving(false);
                         });
                     } else {
                         open?.({ type: "error", message: "Quantity Mismatch" });

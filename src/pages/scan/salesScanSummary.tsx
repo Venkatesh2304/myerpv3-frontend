@@ -36,7 +36,7 @@ export const SalesScanSummaryPage = () => {
                     let colorClass = "text-green-600"; // Default to red
 
                     if (box_count <= 1) {
-                        colorClass = is_posted ? "text-orange-600" : "text-gray-400";
+                        colorClass = is_posted ? "text-red-600" : "text-gray-400";
                     } else if (mismatches && (Array.isArray(mismatches) && mismatches.length > 0)) {
                         colorClass = "text-red-600";
                     }
@@ -65,7 +65,7 @@ export const SalesScanSummaryPage = () => {
                 id: "mismatch_summary",
                 header: "Mismatch",
                 cell: ({ getValue, row }) => {
-                    if (row.original.box_count <= 1) return "-";
+                    if ((row.original.box_count <= 1) && (!row.original.is_posted)) return "-";
                     const mismatches = getValue();
                     if (!mismatches || !Array.isArray(mismatches) || mismatches.length === 0) return "-";
                     const productCount = mismatches.length;

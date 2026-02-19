@@ -16,9 +16,10 @@ export interface SaveConfirmationDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onConfirm: (qty: number) => void;
+    loading?: boolean;
 }
 
-export function SaveConfirmationDialog({ open, onOpenChange, onConfirm }: SaveConfirmationDialogProps) {
+export function SaveConfirmationDialog({ open, onOpenChange, onConfirm, loading }: SaveConfirmationDialogProps) {
     const [qty, setQty] = useState("");
 
     useEffect(() => {
@@ -64,8 +65,10 @@ export function SaveConfirmationDialog({ open, onOpenChange, onConfirm }: SaveCo
                     </div>
                 </div>
                 <DialogFooter className="flex flex-row justify-between">
-                    <Button className="h-12 w-24 bg-red-500 text-white" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button className="h-12 w-24 bg-green-500" onClick={handleConfirm}>Save</Button>
+                    <Button className="h-12 w-24 bg-red-500 text-white" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>Cancel</Button>
+                    <Button className="h-12 w-24 bg-green-500" onClick={handleConfirm} disabled={loading || !qty || isNaN(Number(qty))}>
+                        {loading ? "Saving..." : "Save"}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
