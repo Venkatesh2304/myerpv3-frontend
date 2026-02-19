@@ -33,7 +33,7 @@ export const SalesScanSummaryPage = () => {
                 header: "Bill Number",
                 cell: ({ row, getValue }) => {
                     const { box_count, mismatches, is_posted } = row.original;
-                    let colorClass = "text-red-600"; // Default to red
+                    let colorClass = "text-green-600"; // Default to red
 
                     if (box_count <= 1) {
                         colorClass = is_posted ? "text-orange-600" : "text-gray-400";
@@ -61,6 +61,18 @@ export const SalesScanSummaryPage = () => {
                 size: 80,
                 cell: ({ getValue }) => getValue() - 1
             }),
+            columnHelper.accessor("mismatches", {
+                id: "mismatch_summary",
+                header: "Mismatch",
+                cell: ({ getValue }) => {
+                    const mismatches = getValue();
+                    if (!mismatches || !Array.isArray(mismatches) || mismatches.length === 0) return "-";
+                    const productCount = mismatches.length;
+                    const totalQty = mismatches.reduce((acc, curr) => acc + Math.abs((curr.billed || 0) - (curr.scanned || 0)), 0);
+                    return `${productCount} Products, ${totalQty} Qty`;
+                },
+                size: 150
+            }),
             columnHelper.accessor("scanned_time", {
                 id: "scanned_time",
                 header: "Scanned Time",
@@ -75,6 +87,7 @@ export const SalesScanSummaryPage = () => {
 
     const table = useTable({
         columns,
+        enableRowSelection: false,
         refineCoreProps: {
             resource: "sales_scan",
             pagination: {
