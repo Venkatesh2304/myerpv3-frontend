@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { TruckSummaryPage } from "./truckSummary";
 import { VehicleSummaryPage } from "./vehicleSummary";
+import { SalesScanSummaryPage } from "./salesScanSummary";
 import { Button } from "@/components/ui/button";
-import { Truck, Car } from "lucide-react";
+import { Truck, Car, Scan } from "lucide-react";
 
 export const SummaryPage = () => {
-    const [mode, setMode] = useState<"truck" | "vehicle" | null>(null);
+    const [mode, setMode] = useState<"truck" | "vehicle" | "sales" | null>(null);
 
     if (!mode) {
         return (
@@ -28,6 +29,14 @@ export const SummaryPage = () => {
                         <Car className="h-12 w-12" />
                         Delivery
                     </Button>
+                    <Button
+                        variant="outline"
+                        className="h-40 w-40 flex flex-col gap-4 text-xl hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => setMode("sales")}
+                    >
+                        <Scan className="h-12 w-12" />
+                        Sales
+                    </Button>
                 </div>
             </div>
         );
@@ -35,8 +44,14 @@ export const SummaryPage = () => {
 
     return (
         <div>
+            <div className="mb-4">
+                <Button variant="ghost" size="sm" onClick={() => setMode(null)}>
+                    ← Back to Selection
+                </Button>
+            </div>
             {mode === "truck" && <TruckSummaryPage />}
             {mode === "vehicle" && <VehicleSummaryPage />}
+            {mode === "sales" && <SalesScanSummaryPage />}
         </div>
     );
 };

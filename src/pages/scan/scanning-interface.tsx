@@ -29,17 +29,35 @@ import { BarcodeInputSales, SuggestionOption } from "@/components/scan/barcode-i
 import { downloadFromFilePath } from "@/lib/download";
 import { AddBarcodeDialog } from "@/components/scan/add-barcode-dialog";
 
-interface SalesScanConfig {
-    invoiceMap: QtyMap;
-    case_config: Record<string, number>;
-    barcode_map: Record<string, string[]>;
-    sku_list: string[];
+export interface SalesScanSummary {
+    id: string | number;
+    status: boolean;
+    bill_no: string;
+    party_name: string;
+    is_posted: boolean;
     box_count: number;
-    cbu_map: Record<string, string[]>;
-    sku_name_map?: Record<string, string>;
+    mismatches?: MismatchItem[];
+    bill_date?: string;
+    scanned_time?: string;
 }
 
-interface MismatchItem {
+export interface SalesScanDetail {
+    id: string | number;
+    status: boolean;
+    party_name: string;
+    is_posted: boolean;
+    bill_qty_map: QtyMap;
+    case_config: Record<string, number>;
+    box_count: number;
+    barcode_map: Record<string, string[]>;
+    cbu_map: Record<string, string[]>;
+    sku_name_map?: Record<string, string>;
+    mismatches?: MismatchItem[];
+    bill_date?: string;
+    scanned_time?: string;
+}
+
+export interface MismatchItem {
     sku: string;
     name?: string;
     mrp: number;
@@ -109,11 +127,12 @@ function ConflictResolverDialog({ open, onOpenChange, title, options, onSelect }
     );
 }
 
-function BillSummaryDialog({ open, onOpenChange, items, onDownload }: {
+export function BillSummaryDialog({ open, onOpenChange, items, onDownload, partyName }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     items: MismatchItem[];
     onDownload: () => void;
+    partyName?: string;
 }) {
     if (!open) return null;
 
@@ -122,7 +141,10 @@ function BillSummaryDialog({ open, onOpenChange, items, onDownload }: {
             <DialogContent className="max-w-md w-[95vw] max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-4 border-b">
                     <div className="flex justify-between items-center pr-10">
-                        <DialogTitle>Mismatch</DialogTitle>
+                        <div>
+                            <DialogTitle>Mismatch</DialogTitle>
+                            {partyName && <div className="text-xs text-muted-foreground mt-0.5">{partyName}</div>}
+                        </div>
                         <Button onClick={onDownload} variant="secondary" size="sm">
                             Download
                         </Button>
@@ -181,7 +203,7 @@ interface ScanningInterfaceProps {
 
 export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceProps) {
     const { open } = useNotification();
-    const [config, setConfig] = useState<SalesScanConfig | null>(null);
+    const [config, setConfig] = useState<SalesScanDetail | null>(null);
 
     const {
         currentScanned,
@@ -198,7 +220,12 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
     const [otherScanned, setOtherScanned] = useState<QtyMap>({});
     const [editingItem, setEditingItem] = useState<{ cbu: string; mrp: number; qty: number } | null>(null);
 
-    const [alertConfig, setAlertConfig] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
+    const [alertConfig, setAlertConfig] = useState<{
+        title: string;
+        description: React.ReactNode;
+        onConfirm: () => void;
+        extraAction?: { label: string; onClick: () => void };
+    } | null>(null);
     const [alertOpen, setAlertOpen] = useState(false);
     const [saveDialogOpen, setSaveDialogOpen] = useState(false);
     const [conflictDialog, setConflictDialog] = useState<{
@@ -227,7 +254,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
     }, [currentScanned]);
 
     // Helpers
-    const getInvoiceItem = (sku: string) => config?.invoiceMap[sku];
+    const getInvoiceItem = (sku: string) => config?.bill_qty_map[sku];
 
     const addLog = (type: ScanLogItem["type"], sku: string, mrp: number, qty: number, data: string) => {
         setScanLogs(prev => [...prev, {
@@ -296,12 +323,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                 resource: "sales_scan",
                 id: scanId,
             }).then((res) => {
-                setConfig({
-                    ...res.data,
-                    invoiceMap: res.data.bill_qty_map || res.data.invoiceMap,
-                    cbu_map: res.data.cbu_map || res.data.cbu_to_sku_map,
-                    sku_name_map: res.data.sku_name_map || {}
-                });
+                setConfig(res.data as SalesScanDetail);
                 setBox(res.data.box_count);
                 setMaxBox(res.data.box_count);
             });
@@ -320,6 +342,38 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
             setScanLogs([]); // Reset logs when box changes/loads
         });
     }, [box, scanId]);
+
+    // Navigation Guards
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (currentBoxTotal > 0) {
+                e.preventDefault();
+                e.returnValue = ""; // Standard way to trigger browser confirmation
+            }
+        };
+
+        const handlePopState = (e: PopStateEvent) => {
+            if (currentBoxTotal > 0) {
+                if (window.confirm("You have unsaved scans in this box. Are you sure you want to exit?")) {
+                    // User clicked OK, we let them go back.
+                } else {
+                    // User clicked Cancel, we push the state back to keep them here.
+                    window.history.pushState(null, "", window.location.href);
+                }
+            }
+        };
+
+        // Push initial state to handle back button interception
+        window.history.pushState(null, "", window.location.href);
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        window.addEventListener("popstate", handlePopState);
+
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+            window.removeEventListener("popstate", handlePopState);
+        };
+    }, [currentBoxTotal]);
 
 
     const handlePotentialMatches = (matches: { sku: string; mrp: number }[], qty: number = 1, type: ScanLogItem["type"], data: string) => {
@@ -379,10 +433,10 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                 let detectedCaseQty = 0;
 
                 skuList.forEach(sku => {
-                    if (config.invoiceMap[sku]) {
+                    if (config.bill_qty_map[sku]) {
                         const q = config.case_config?.[sku];
                         if (q && detectedCaseQty === 0) detectedCaseQty = q;
-                        Object.keys(config.invoiceMap[sku]).forEach(mrp => {
+                        Object.keys(config.bill_qty_map[sku]).forEach(mrp => {
                             validOptions.push({ sku, mrp: Number(mrp) });
                         });
                     }
@@ -418,27 +472,14 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
             const skus = config.barcode_map[input];
             const validOptions: { sku: string; mrp: number }[] = [];
             skus.forEach(sku => {
-                if (config.invoiceMap[sku]) {
-                    Object.keys(config.invoiceMap[sku]).forEach(mrp => {
+                if (config.bill_qty_map[sku]) {
+                    Object.keys(config.bill_qty_map[sku]).forEach(mrp => {
                         validOptions.push({ sku, mrp: Number(mrp) });
                     });
                 }
             });
-
-            if (validOptions.length > 0) {
-                handlePotentialMatches(validOptions, 1, "scan_barcode", input);
-                return;
-            }
-            // If recognized barcode but no valid options in bill -> falls through to API check? 
-            // Or better to fail fast? If it's in barcode_map but not in bill, it effectively means "Not in Bill"
-            // We should use the "Feature 1" logic even here? No, user said "If barcode is not found i will have a get call".
-            // If it IS found locally (in barcode_map) but not in bill, we should probably just alert.
-            setAlertConfig({
-                title: "Not in Bill",
-                description: "Product found in database but not in this bill.",
-                onConfirm: () => { }
-            });
-            setAlertOpen(true);
+            // Recognized barcode will always be in bill
+            handlePotentialMatches(validOptions, 1, "scan_barcode", input);
             return;
         }
 
@@ -474,8 +515,8 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
 
                     // Check if any product is in the current bill
                     const validOptions = products.filter(item =>
-                        config.invoiceMap[item.sku] &&
-                        config.invoiceMap[item.sku][item.mrp] !== undefined
+                        config.bill_qty_map[item.sku] &&
+                        config.bill_qty_map[item.sku][item.mrp] !== undefined
                     );
 
                     if (validOptions.length > 0) {
@@ -498,7 +539,11 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                                     </div>
                                 </div>
                             ),
-                            onConfirm: () => { }
+                            onConfirm: () => { },
+                            extraAction: {
+                                label: "Is this Other product?",
+                                onClick: () => setAddBarcodeDialog({ open: true, barcode: input })
+                            }
                         });
                         setAlertOpen(true);
                     }
@@ -530,7 +575,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
     const suggestions = useMemo(() => {
         if (!config) return [];
         const options: SuggestionOption[] = [];
-        Object.entries(config.invoiceMap).forEach(([sku, mrpMap]) => {
+        Object.entries(config.bill_qty_map).forEach(([sku, mrpMap]) => {
             const name = config.sku_name_map?.[sku];
             Object.keys(mrpMap).forEach(mrp => {
                 options.push({
@@ -553,7 +598,22 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                 >
                     {billNo?.toUpperCase()}
                 </div>
-                <Button variant="ghost" size="sm" onClick={onBack} className="h-8 hover:bg-red-100 hover:text-red-600">Exit</Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                        if (currentBoxTotal > 0) {
+                            if (window.confirm("You have unsaved scans in this box. Are you sure you want to exit?")) {
+                                onBack();
+                            }
+                        } else {
+                            onBack();
+                        }
+                    }}
+                    className="h-8 hover:bg-red-100 hover:text-red-600"
+                >
+                    Exit
+                </Button>
             </div>
 
             <div className="flex gap-4">
@@ -591,7 +651,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
 
             <ScannedItemsTable
                 items={flattenedScannedItems}
-                purchase={config?.invoiceMap || {}}
+                purchase={config?.bill_qty_map || {}}
                 otherScanned={otherScanned}
                 onEdit={setEditingItem}
                 label="SKU"
@@ -611,6 +671,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                 title={alertConfig?.title}
                 description={alertConfig?.description}
                 onConfirm={alertConfig?.onConfirm || (() => { })}
+                extraAction={alertConfig?.extraAction}
             />
 
             <SaveConfirmationDialog
@@ -664,6 +725,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                 onOpenChange={(o) => { if (!o) { setSummaryDialogOpen(false); focusInput(); } }}
                 items={mismatchData}
                 onDownload={handleDownloadSummary}
+                partyName={config?.party_name}
             />
 
             <AddBarcodeDialog
@@ -675,7 +737,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                     }
                 }}
                 barcode={addBarcodeDialog.barcode}
-                invoiceMap={config?.invoiceMap || {}}
+                invoiceMap={config?.bill_qty_map || {}}
                 skuNameMap={config?.sku_name_map}
                 onSuccess={(sku, mrp) => {
                     // Update local barcode map and process the item
@@ -701,6 +763,6 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                     }
                 }}
             />
-        </div>
+        </div >
     );
 }

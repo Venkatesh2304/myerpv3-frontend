@@ -72,7 +72,7 @@ export function AddBarcodeDialog({ open, onOpenChange, barcode, invoiceMap, skuN
         }}>
             <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] flex flex-col p-6">
                 <DialogHeader className="pb-2">
-                    <DialogTitle className="text-xl font-bold">Map Unknown Barcode</DialogTitle>
+                    <DialogTitle className="text-xl font-bold">Map Barcode</DialogTitle>
                 </DialogHeader>
 
                 <div className="flex-1 overflow-hidden flex flex-col gap-4 py-2">
