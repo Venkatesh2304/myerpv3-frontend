@@ -53,7 +53,7 @@ export const BillList = () => {
             columnHelper.accessor("print_type", {
                 id: "print_type",
                 header: "Bill Type",
-                cell: ({ getValue }) => (getValue() ? (getValue() == "first_copy" ? "First Copy" : "Loading Sheet Salesman") : "-"),
+                cell: ({ getValue }) => (getValue() ? (getValue()?.startsWith("first_copy") ? "First Copy" : "Loading Sheet Salesman") : "-"),
                 size: 100,
             }),
             columnHelper.accessor("salesman", {
@@ -105,12 +105,14 @@ export const BillList = () => {
             filters: {
                 initial: [
                     ...mapFormToFilters(DEFAULT_FILTER_VALUES),
+                ],
+                permanent: [
                     {
                         field: "company",
                         operator: "eq",
                         value: company?.id,
                     }
-                ],
+                ]
             },
             pagination: {
                 mode: "client",

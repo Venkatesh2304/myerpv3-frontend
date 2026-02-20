@@ -8,6 +8,71 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { SalesScanSummary, BillSummaryDialog, MismatchItem } from "./scanning-interface";
 import { downloadFromFilePath } from "@/lib/download";
+import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/custom/date-picker";
+import { getFilterValue, handleFilterChange } from "@/lib/filters";
+import { CrudFilters } from "@refinedev/core";
+
+const SCAN_TYPE_OPTIONS = [
+    { value: "all", label: "All" },
+    { value: "scanned", label: "Scanned" },
+    { value: "not_scanned", label: "Not Scanned" },
+];
+
+const SalesScanFilters: React.FC<{
+    filters: CrudFilters;
+    setFilters: (filters: CrudFilters) => void;
+}> = ({ filters, setFilters }) => {
+    const resetFilters = () => {
+        setFilters(["scan_type", "bill_date"].map((field) => ({
+            field,
+            operator: "eq",
+            value: null,
+        })));
+    };
+
+    return (
+        <Card className="mb-4 pt-4 pb-4">
+            <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div className="flex flex-col space-y-2">
+                        <Label className="text-xs">Scan Type</Label>
+                        <Select
+                            value={getFilterValue(filters, "scan_type") || "all"}
+                            onValueChange={(value) => handleFilterChange(setFilters, "scan_type", value === "all" ? null : value)}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select Scan Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {SCAN_TYPE_OPTIONS.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="flex flex-col space-y-2">
+                        <Label className="text-xs">Bill Date</Label>
+                        <DatePicker
+                            value={getFilterValue(filters, "bill_date", null)}
+                            onChange={(date) => handleFilterChange(setFilters, "bill_date", date)}
+                        />
+                    </div>
+
+                    <Button type="button" variant="outline" onClick={resetFilters}>
+                        Reset
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
 
 export const SalesScanSummaryPage = () => {
     const { open } = useNotification();
@@ -99,6 +164,8 @@ export const SalesScanSummaryPage = () => {
         },
     });
 
+    const { refineCore: { filters, setFilters } } = table;
+
     const handleRowClick = async (row: SalesScanSummary) => {
         setSelectedScan(row);
         setDialogOpen(true);
@@ -142,6 +209,7 @@ export const SalesScanSummaryPage = () => {
 
     return (
         <div className="container max-w-full space-y-4">
+            <SalesScanFilters filters={filters} setFilters={setFilters} />
             <DataTable
                 table={table}
                 onRowEnter={handleRowClick}

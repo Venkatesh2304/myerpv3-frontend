@@ -28,9 +28,9 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { dataProvider } from "@/lib/dataprovider";
-import { useCustomMutation, useNotification } from "@refinedev/core";
+import { useCustomMutation, useNotification, useOne } from "@refinedev/core";
 import { Printer } from "lucide-react";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { OutstandingTable } from "./outstanding-table";
 import { useCompany } from "@/providers/company-provider";
 import { useCaptcha } from "@/components/custom/CaptchaProvider";
@@ -40,20 +40,48 @@ const PRINT_TYPE_OPTIONS = [
     { value: "both_copy", label: "Both Copy" },
     { value: "loading_sheet_salesman", label: "Loading Sheet Salesman" },
     { value: "loading_sheet", label: "Loading Sheet" },
+    { value: "picking_sheet", label: "Picking Sheet" },
     { value: "first_copy", label: "First Copy" },
+    { value: "first_copy_new", label: "First Copy (New)" },
     { value: "double_first_copy", label: "Double First Copy" },
     { value: "second_copy", label: "Second Copy" },
     { value: "reload_bill", label: "Reload Bill" },
 ];
 
 export const PrintAction = ({ table }: { table: any }) => {
+    const { open } = useNotification();
+    const { company } = useCompany();
+
+    const { query: companyQuery } = useOne({
+        resource: "company",
+        id: company?.id,
+        queryOptions: {
+            enabled: !!company?.id,
+        },
+    });
+
+    const allowedPrintTypes = (companyQuery.data?.data as any)?.print_types || [];
+
+    const filteredOptions = useMemo(() => {
+        if (!allowedPrintTypes || allowedPrintTypes.length === 0) return PRINT_TYPE_OPTIONS;
+        return PRINT_TYPE_OPTIONS.filter(opt => allowedPrintTypes.includes(opt.value));
+    }, [allowedPrintTypes]);
+
     const [printType, setPrintType] = React.useState("both_copy");
+
+    useEffect(() => {
+        if (filteredOptions.length > 0) {
+            // Set first allowed option as default if the current one is not in the list
+            if (!filteredOptions.find(o => o.value === printType)) {
+                setPrintType(filteredOptions[0].value);
+            }
+        }
+    }, [filteredOptions]);
+
     const [showPrintedWarning, setShowPrintedWarning] = React.useState(false);
     const [showLoadingSheetDialog, setShowLoadingSheetDialog] =
         React.useState(false);
     const [selectedParty, setSelectedParty] = React.useState("");
-    const { open } = useNotification();
-    const { company } = useCompany();
     const { mutation } = useCustomMutation();
     const captcha = useCaptcha();
     const isLoading = mutation.isPending;
@@ -196,7 +224,7 @@ export const PrintAction = ({ table }: { table: any }) => {
                             <SelectValue placeholder="Print Type" />
                         </SelectTrigger>
                         <SelectContent>
-                            {PRINT_TYPE_OPTIONS.map((option) => (
+                            {filteredOptions.map((option) => (
                                 <SelectItem key={option.value} value={option.value}>
                                     {option.label}
                                 </SelectItem>
