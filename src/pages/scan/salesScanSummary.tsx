@@ -99,8 +99,10 @@ export const SalesScanSummaryPage = () => {
                 cell: ({ row, getValue }) => {
                     const { box_count, mismatches, is_posted } = row.original;
                     let colorClass = "text-green-600"; // Default to red
-
-                    if (box_count <= 1) {
+                    if (mismatches?.length == 0) {
+                        colorClass = "text-green-600";
+                    }
+                    else if ((box_count <= 1)) {
                         colorClass = is_posted ? "text-red-600" : "text-gray-400";
                     } else if (mismatches && (Array.isArray(mismatches) && mismatches.length > 0)) {
                         colorClass = "text-red-600";
