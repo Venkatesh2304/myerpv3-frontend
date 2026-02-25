@@ -28,6 +28,8 @@ import { useScanLogic } from "@/hooks/use-scan-logic";
 import { BarcodeInputSales, SuggestionOption } from "@/components/scan/barcode-input-sales";
 import { downloadFromFilePath } from "@/lib/download";
 import { AddBarcodeDialog } from "@/components/scan/add-barcode-dialog";
+import { CBUVerificationDialog } from "@/components/scan/cbu-verification-dialog";
+import { NegativeQuantityDialog } from "@/components/scan/negative-quantity-dialog";
 
 export interface SalesScanSummary {
     id: string | number;
@@ -66,11 +68,10 @@ export interface MismatchItem {
 }
 
 interface ScanLogItem {
-    type: "manual" | "scan_barcode" | "scan_cbu";
-    sku: string;
-    mrp: number;
-    qty: number;
-    data: string;
+    type: string;
+    sku?: string;
+    value: string | number;
+    desc: string;
     timestamp: number;
 }
 
@@ -243,6 +244,24 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
     const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
     const [mismatchData, setMismatchData] = useState<MismatchItem[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+    const [cbuVerificationDialog, setCbuVerificationDialog] = useState<{
+        open: boolean;
+        sku: string;
+        productName: string;
+        mrp: number;
+        expectedCbus: string[];
+        caseQty: number;
+    }>({ open: false, sku: "", productName: "", mrp: 0, expectedCbus: [], caseQty: 0 });
+
+    const [negativeQuantityDialog, setNegativeQuantityDialog] = useState<{
+        open: boolean;
+        sku: string;
+        productName: string;
+        mrp: number;
+        qty: number;
+        isAdd: boolean;
+        logData?: { type: string, value: string | number, desc: string };
+    }>({ open: false, sku: "", productName: "", mrp: 0, qty: 0, isAdd: false });
 
     const inputRef = useRef<HTMLInputElement>(null);
     const form = useForm({ defaultValues: { input: "" } });
@@ -257,22 +276,41 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
     // Helpers
     const getInvoiceItem = (sku: string) => config?.bill_qty_map[sku];
 
-    const addLog = (type: ScanLogItem["type"], sku: string, mrp: number, qty: number, data: string) => {
+    const addLog = (type: string, value: string | number, desc: string, sku?: string) => {
         setScanLogs(prev => [...prev, {
             type,
             sku,
-            mrp,
-            qty,
-            data,
+            value,
+            desc,
             timestamp: Date.now()
         }]);
     };
 
-    // Wrapper for updateScannedItem to include logging
-    const handleUpdateScannedItem = (sku: string, mrp: number, qty: number, isAdd: boolean, logData?: { type: ScanLogItem["type"], data: string }) => {
+    // Wrapper for updateScannedItem to include logging and negative qty check
+    const handleUpdateScannedItem = (sku: string, mrp: number, qty: number, isAdd: boolean, logData?: { type: string, value: string | number, desc: string }) => {
+        if (isAdd && config) {
+            const billedQty = config.bill_qty_map[sku]?.[mrp] || 0;
+            const otherScannedQty = otherScanned[sku]?.[mrp] || 0;
+            const currentScannedQty = currentScanned[sku]?.[mrp] || 0;
+            const remQty = billedQty - (otherScannedQty + currentScannedQty);
+
+            if (remQty - qty < 0) {
+                setNegativeQuantityDialog({
+                    open: true,
+                    sku,
+                    productName: config.sku_name_map?.[sku] || sku,
+                    mrp,
+                    qty,
+                    isAdd,
+                    logData
+                });
+                return;
+            }
+        }
+
         updateScannedItem(sku, mrp, qty, isAdd);
         if (isAdd && logData) {
-            addLog(logData.type, sku, mrp, qty, logData.data);
+            addLog(logData.type, logData.value, logData.desc, sku);
         }
     };
 
@@ -377,12 +415,11 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
     }, [currentBoxTotal]);
 
 
-    const handlePotentialMatches = (matches: { sku: string; mrp: number }[], qty: number = 1, type: ScanLogItem["type"], data: string) => {
+    const handlePotentialMatches = (matches: { sku: string; mrp: number }[], qty: number = 1, type: string, data: string) => {
         if (matches.length === 0) {
-            // Should be handled by caller usually, but safe fallback
             return;
         } else if (matches.length === 1) {
-            handleUpdateScannedItem(matches[0].sku, matches[0].mrp, qty, true, { type, data });
+            handleUpdateScannedItem(matches[0].sku, matches[0].mrp, qty, true, { type, value: data, desc: `Scanned ${type === "scan_barcode" ? "barcode" : "CBU"}: ${data}` });
         } else {
             setConflictDialog({
                 open: true,
@@ -394,7 +431,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                         value: o
                     };
                 }),
-                onSelect: (val) => handleUpdateScannedItem(val.sku, val.mrp, qty, true, { type, data })
+                onSelect: (val) => handleUpdateScannedItem(val.sku, val.mrp, qty, true, { type, value: data, desc: `Selected ${val.sku} from multiple matches for ${type === "scan_barcode" ? "barcode" : "CBU"}: ${data}` })
             });
         }
     };
@@ -446,6 +483,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                 if (validOptions.length > 0) {
                     handlePotentialMatches(validOptions, detectedCaseQty || 1, "scan_cbu", input);
                 } else {
+                    addLog("product_not_in_bill", input, `CBU ${input} mapped SKUs not in this bill`);
                     setAlertConfig({
                         title: "SKU Not in Invoice",
                         description: `CBU mapped SKUs (${skuList.join(", ")}) not found in this bill.`,
@@ -455,6 +493,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                 }
                 return;
             } else {
+                addLog("unknown_cbu", input, `Scanned unknown CBU: ${input}`);
                 setAlertConfig({
                     title: "Unknown Scan",
                     description: "Unknown CBU Code.",
@@ -499,6 +538,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
 
             if (basepack === null) {
                 // No products found or truly unknown
+                addLog("unknown_barcode", input, `Scanned unknown barcode: ${input}`);
                 setAddBarcodeDialog({ open: true, barcode: input });
             } else {
                 // basepack is not null -> found products
@@ -525,6 +565,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                     } else {
                         // SKU matches exist but NOT in this bill
                         const first = products[0];
+                        addLog("product_not_in_bill", input, `Barcode ${input} (SKU: ${first.sku}) not in this bill`);
                         setAlertConfig({
                             title: "Product Not in Bill",
                             description: (
@@ -564,23 +605,78 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
         form.setValue("input", "");
     };
 
-    const handleManualSelect = (option: SuggestionOption) => {
-        handleUpdateScannedItem(option.value.sku, option.value.mrp, 1, true, {
-            type: "manual",
-            data: "manual_select"
-        });
-        focusInput();
+    const handleManualSelect = (option: SuggestionOption, searchTerm: string) => {
+        const sku = option.value.sku;
+        const mrp = option.value.mrp;
+        const caseQty = config?.case_config?.[sku];
+        const billedQty = config?.bill_qty_map?.[sku]?.[mrp] || 0;
+
+        if (caseQty && caseQty <= billedQty) {
+            // Find all expected CBUs for this SKU
+            const expectedCbus: string[] = [];
+            if (config?.cbu_map) {
+                Object.entries(config.cbu_map).forEach(([cbu, skus]) => {
+                    if (skus.includes(sku)) {
+                        expectedCbus.push(cbu);
+                    }
+                });
+            }
+
+            // Optimization: If the user searched by the exact CBU, skip the dialog
+            const normalizedSearch = searchTerm.trim().toUpperCase();
+            const isCbuSearch = expectedCbus.some(cbu => cbu.trim().toUpperCase() === normalizedSearch);
+
+            if (isCbuSearch) {
+                handleUpdateScannedItem(sku, mrp, caseQty, true, {
+                    type: "manual_cbu",
+                    value: sku,
+                    desc: `Added case of ${sku} via direct CBU search`
+                });
+                focusInput();
+            } else {
+                setCbuVerificationDialog({
+                    open: true,
+                    sku,
+                    productName: config.sku_name_map?.[sku] || sku,
+                    mrp,
+                    expectedCbus,
+                    caseQty
+                });
+            }
+        } else {
+            handleUpdateScannedItem(sku, mrp, 1, true, {
+                type: "manual_piece",
+                value: sku,
+                desc: `Added single unit of ${sku} via manual selection`
+            });
+            focusInput();
+        }
     };
 
 
     const suggestions = useMemo(() => {
         if (!config) return [];
         const options: SuggestionOption[] = [];
+
+        // Create a reverse mapping of SKU to CBUs for faster lookup
+        const skuToCbus: Record<string, string[]> = {};
+        if (config.cbu_map) {
+            Object.entries(config.cbu_map).forEach(([cbu, skus]) => {
+                skus.forEach(sku => {
+                    if (!skuToCbus[sku]) skuToCbus[sku] = [];
+                    if (!skuToCbus[sku].includes(cbu)) skuToCbus[sku].push(cbu);
+                });
+            });
+        }
+
         Object.entries(config.bill_qty_map).forEach(([sku, mrpMap]) => {
             const name = config.sku_name_map?.[sku];
+            const cbusForSku = skuToCbus[sku] || [];
+            const cbuString = cbusForSku.length > 0 ? ` (CBU: ${cbusForSku.join(", ")})` : "";
+
             Object.keys(mrpMap).forEach(mrp => {
                 options.push({
-                    label: `${sku} ${name ? `- ${name}` : ""} - ₹${mrp}`,
+                    label: `${sku} ${name ? `- ${name}` : ""} - ₹${mrp}${cbuString}`,
                     value: { sku, mrp: Number(mrp), name }
                 });
             });
@@ -716,7 +812,16 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                 item={editingItem}
                 open={!!editingItem}
                 onOpenChange={(o) => { if (!o) { setEditingItem(null); focusInput(); } }}
-                onUpdate={(sku, mrp, qty, isAdd) => handleUpdateScannedItem(sku, mrp, qty, isAdd)} // Note: Edits might not need logging or different type? User said "logging of events... type scan/manual". Edit is correction. I'll omit or treat separately. User didn't specify Edit logging, just entry methods.
+                onUpdate={(sku, mrp, qty, isAdd) => {
+                    if (editingItem && qty > editingItem.qty) {
+                        open?.({ type: "error", message: "Quantity increase not allowed. Only decreasing is permitted." });
+                        return;
+                    }
+                    if (editingItem && !isAdd) {
+                        addLog("edit_qty", qty, `Manually adjusted quantity of ${sku} from ${editingItem.qty} to ${qty}`, sku);
+                    }
+                    handleUpdateScannedItem(sku, mrp, qty, isAdd);
+                }}
                 label="SKU"
             />
 
@@ -764,11 +869,49 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                         });
 
                         // Directly add the item as we know it's valid (selected from bill)
+                        addLog("barcode_mapping", addBarcodeDialog.barcode, `Mapped barcode ${addBarcodeDialog.barcode} to SKU ${sku}`, sku);
                         handleUpdateScannedItem(sku, mrp, 1, true, {
                             type: "scan_barcode",
-                            data: addBarcodeDialog.barcode
+                            value: addBarcodeDialog.barcode,
+                            desc: `Scanned newly mapped barcode: ${addBarcodeDialog.barcode}`
                         });
                     }
+                }}
+            />
+
+            <CBUVerificationDialog
+                open={cbuVerificationDialog.open}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setCbuVerificationDialog(prev => ({ ...prev, open: false }));
+                        focusInput();
+                    }
+                }}
+                sku={cbuVerificationDialog.sku}
+                productName={cbuVerificationDialog.productName}
+                mrp={cbuVerificationDialog.mrp}
+                expectedCbus={cbuVerificationDialog.expectedCbus}
+                onVerified={(sku, mrp) => {
+                    handleUpdateScannedItem(sku, mrp, cbuVerificationDialog.caseQty, true, {
+                        type: "manual_cbu",
+                        value: sku,
+                        desc: `Added case of ${sku} after CBU verification`
+                    });
+                }}
+            />
+
+            <NegativeQuantityDialog
+                open={negativeQuantityDialog.open}
+                onOpenChange={(open) => setNegativeQuantityDialog(prev => ({ ...prev, open }))}
+                sku={negativeQuantityDialog.sku}
+                productName={negativeQuantityDialog.productName}
+                mrp={negativeQuantityDialog.mrp}
+                onConfirm={() => {
+                    updateScannedItem(negativeQuantityDialog.sku, negativeQuantityDialog.mrp, negativeQuantityDialog.qty, negativeQuantityDialog.isAdd);
+                    if (negativeQuantityDialog.isAdd && negativeQuantityDialog.logData) {
+                        addLog(negativeQuantityDialog.logData.type, negativeQuantityDialog.logData.value, `${negativeQuantityDialog.logData.desc} (Forced negative addition confirmed)`, negativeQuantityDialog.sku);
+                    }
+                    focusInput();
                 }}
             />
         </div >

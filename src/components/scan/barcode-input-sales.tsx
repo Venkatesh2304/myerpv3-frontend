@@ -11,7 +11,7 @@ interface BarcodeInputProps {
     value: string;
     onChange: (value: string) => void;
     onScan: (value: string) => void;
-    onManualSelect: (option: SuggestionOption) => void;
+    onManualSelect: (option: SuggestionOption, value: string) => void;
     options: SuggestionOption[];
     placeholder?: string;
     inputRefProp?: React.RefObject<HTMLInputElement>;
@@ -78,7 +78,7 @@ export function BarcodeInputSales({
                                 )}
                                 onMouseDown={(e) => {
                                     e.preventDefault(); // Prevent blur
-                                    onManualSelect(option);
+                                    onManualSelect(option, value);
                                     setShowSuggestions(false);
                                     onChange(""); // Clear input on selection
                                 }}
