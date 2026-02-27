@@ -4,7 +4,7 @@ set -euo pipefail
 export $(grep -v '^#' .env.production | xargs)
 echo "[+] Using API base URL: $VITE_BACKEND_API_URL"
 
-REMOTE_HOST="ubuntu@ec2-13-235-142-20.ap-south-1.compute.amazonaws.com"
+REMOTE_HOST="ubuntu@ec2-13-235-142-203.ap-south-1.compute.amazonaws.com"
 SSH_KEY="/home/venkatesh/Downloads/billingv2.pem"
 REMOTE_DIR="/home/ubuntu/myerpv3-frontend"
 
