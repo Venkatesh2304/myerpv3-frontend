@@ -21,7 +21,7 @@ echo "[+] Building Next.js"
 npm run build
 
 git add .
-# git commit -m "Build Frontend"
+git commit -m "Build Frontend" --allow-empty
 
 echo "==> Pushing to remote"
 git push origin -f
