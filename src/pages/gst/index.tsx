@@ -15,6 +15,7 @@ const tabs = [
 
 export const GstList = () => {
     const [activeTab, setActiveTab] = useState("gstr1");
+    const x = 0;
 
     return (
         <CaptchaProvider>
