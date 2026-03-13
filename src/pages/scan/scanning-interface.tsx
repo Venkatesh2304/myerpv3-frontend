@@ -402,7 +402,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
             }
         };
 
-        // Push initial state to handle back button interception
+        // Push initial state to handle back button interceptionfed
         window.history.pushState(null, "", window.location.href);
 
         window.addEventListener("beforeunload", handleBeforeUnload);
@@ -813,7 +813,8 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                 open={!!editingItem}
                 onOpenChange={(o) => { if (!o) { setEditingItem(null); focusInput(); } }}
                 onUpdate={(sku, mrp, qty, isAdd) => {
-                    if (editingItem && qty > editingItem.qty) {
+                    //allow qty increase only if mrp < 50
+                    if (editingItem && qty > editingItem.qty && editingItem.mrp > 50) {
                         open?.({ type: "error", message: "Quantity increase not allowed. Only decreasing is permitted." });
                         return;
                     }
