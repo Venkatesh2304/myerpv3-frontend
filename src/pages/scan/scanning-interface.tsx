@@ -815,7 +815,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                 onUpdate={(sku, mrp, qty, isAdd) => {
                     //allow qty increase only if mrp < 50
                     if (editingItem && qty > editingItem.qty && editingItem.mrp > 50) {
-                        open?.({ type: "error", message: "Quantity increase not allowed. Only decreasing is permitted." });
+                        open?.({ type: "error", message: "Quantity increase not allowed for MRP > 50. Only decreasing is permitted." });
                         return;
                     }
                     if (editingItem && !isAdd) {
