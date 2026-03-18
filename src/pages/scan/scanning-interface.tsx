@@ -110,7 +110,7 @@ function ConflictResolverDialog({ open, onOpenChange, title, options, onSelect }
                         <Button
                             key={idx}
                             variant="outline"
-                            className="justify-start h-auto py-2 px-4"
+                            className="justify-start h-auto py-2 px-4 w-full whitespace-normal"
                             onClick={() => {
                                 onSelect(option.value);
                                 onOpenChange(false);
