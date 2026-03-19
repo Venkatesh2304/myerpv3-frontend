@@ -7,6 +7,7 @@ import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { SalesScanSummary, BillSummaryDialog, MismatchItem } from "./scanning-interface";
+import { AnomalyDialog } from "./components/AnomalyDialog";
 import { downloadFromFilePath } from "@/lib/download";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -25,7 +26,8 @@ const SCAN_TYPE_OPTIONS = [
 const SalesScanFilters: React.FC<{
     filters: CrudFilters;
     setFilters: (filters: CrudFilters) => void;
-}> = ({ filters, setFilters }) => {
+    onAnomalyClick: () => void;
+}> = ({ filters, setFilters, onAnomalyClick }) => {
     const resetFilters = () => {
         setFilters(["scan_type", "bill_date"].map((field) => ({
             field,
@@ -68,6 +70,10 @@ const SalesScanFilters: React.FC<{
                     <Button type="button" variant="outline" onClick={resetFilters}>
                         Reset
                     </Button>
+
+                    <Button type="button" variant="destructive" onClick={onAnomalyClick} className="ml-auto">
+                        Anamoly
+                    </Button>
                 </div>
             </CardContent>
         </Card>
@@ -79,6 +85,7 @@ export const SalesScanSummaryPage = () => {
     const [selectedScan, setSelectedScan] = useState<SalesScanSummary | null>(null);
     const [mismatchData, setMismatchData] = useState<MismatchItem[]>([]);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [anomalyDialogOpen, setAnomalyDialogOpen] = useState(false);
 
     const columns = useMemo(() => {
         const columnHelper = createColumnHelper<SalesScanSummary>();
@@ -211,7 +218,11 @@ export const SalesScanSummaryPage = () => {
 
     return (
         <div className="container max-w-full space-y-4">
-            <SalesScanFilters filters={filters} setFilters={setFilters} />
+            <SalesScanFilters
+                filters={filters}
+                setFilters={setFilters}
+                onAnomalyClick={() => setAnomalyDialogOpen(true)}
+            />
             <DataTable
                 table={table}
                 onRowEnter={handleRowClick}
@@ -223,6 +234,11 @@ export const SalesScanSummaryPage = () => {
                 items={mismatchData}
                 onDownload={handleDownloadSummary}
                 partyName={selectedScan?.party_name}
+            />
+
+            <AnomalyDialog
+                open={anomalyDialogOpen}
+                onOpenChange={setAnomalyDialogOpen}
             />
         </div>
     );
