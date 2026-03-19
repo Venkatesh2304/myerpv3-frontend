@@ -27,6 +27,7 @@ interface AnomalyItem {
     bill_no: string;
     desc: string;
     mrp?: string | number;
+    time?: string | number | null;
 }
 
 interface AnomalyResponse {
@@ -50,6 +51,7 @@ const AnomalyTable: React.FC<{ title: string; items: AnomalyItem[] }> = ({ title
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead>Time</TableHead>
                             <TableHead>Product</TableHead>
                             <TableHead>MRP</TableHead>
                             <TableHead>Party</TableHead>
@@ -58,15 +60,32 @@ const AnomalyTable: React.FC<{ title: string; items: AnomalyItem[] }> = ({ title
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {items.map((item, index) => (
-                            <TableRow key={index}>
-                                <TableCell className="font-medium">{item.product}</TableCell>
-                                <TableCell>{item.mrp || "-"}</TableCell>
-                                <TableCell>{item.party}</TableCell>
-                                <TableCell>{item.bill_no}</TableCell>
-                                <TableCell className="text-red-600 font-medium">{item.desc}</TableCell>
-                            </TableRow>
-                        ))}
+                        {items.map((item, index) => {
+                            const formattedTime = (() => {
+                                if (!item.time) return "-";
+                                try {
+                                    // Handle string/number timestamps
+                                    const t = Number(item.time);
+                                    if (isNaN(t)) return String(item.time);
+                                    // Assume milliseconds if > 10^12, else seconds
+                                    const date = new Date(t < 1e11 ? t * 1000 : t);
+                                    return format(date, "HH:mm:ss");
+                                } catch {
+                                    return String(item.time);
+                                }
+                            })();
+
+                            return (
+                                <TableRow key={index}>
+                                    <TableCell className="text-muted-foreground tabular-nums">{formattedTime}</TableCell>
+                                    <TableCell className="font-medium">{item.product}</TableCell>
+                                    <TableCell>{item.mrp || "-"}</TableCell>
+                                    <TableCell>{item.party}</TableCell>
+                                    <TableCell>{item.bill_no}</TableCell>
+                                    <TableCell className="text-red-600 font-medium">{item.desc}</TableCell>
+                                </TableRow>
+                            );
+                        })}
                     </TableBody>
                 </Table>
             </div>
