@@ -77,7 +77,7 @@ const AnomalyTable: React.FC<{ title: string; items: AnomalyItem[] }> = ({ title
 
                             return (
                                 <TableRow key={index}>
-                                    <TableCell className="text-muted-foreground tabular-nums">{formattedTime}</TableCell>
+                                    <TableCell className="tabular-nums">{formattedTime}</TableCell>
                                     <TableCell className="font-medium">{item.product}</TableCell>
                                     <TableCell>{item.mrp || "-"}</TableCell>
                                     <TableCell>{item.party}</TableCell>
