@@ -30,6 +30,7 @@ import { downloadFromFilePath } from "@/lib/download";
 import { AddBarcodeDialog } from "@/components/scan/add-barcode-dialog";
 import { CBUVerificationDialog } from "@/components/scan/cbu-verification-dialog";
 import { NegativeQuantityDialog } from "@/components/scan/negative-quantity-dialog";
+import { BarcodeCaseDialog } from "@/components/scan/barcode-case-dialog";
 
 export interface SalesScanSummary {
     id: string | number;
@@ -263,6 +264,16 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
         logData?: { type: string, value: string | number, desc: string };
     }>({ open: false, sku: "", productName: "", mrp: 0, qty: 0, isAdd: false });
 
+    const [barcodeCaseDialog, setBarcodeCaseDialog] = useState<{
+        open: boolean;
+        sku: string;
+        productName: string;
+        mrp: number;
+        caseQty: number;
+        type: string;
+        value: string;
+    }>({ open: false, sku: "", productName: "", mrp: 0, caseQty: 0, type: "", value: "" });
+
     const inputRef = useRef<HTMLInputElement>(null);
     const form = useForm({ defaultValues: { input: "" } });
 
@@ -419,7 +430,28 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
         if (matches.length === 0) {
             return;
         } else if (matches.length === 1) {
-            handleUpdateScannedItem(matches[0].sku, matches[0].mrp, qty, true, { type, value: data, desc: `Scanned ${type === "scan_barcode" ? "barcode" : "CBU"}: ${data}` });
+            const { sku, mrp } = matches[0];
+            if (type === "scan_barcode") {
+                const caseQty = config?.case_config?.[sku] || 0;
+                const billedQty = config?.bill_qty_map[sku]?.[mrp] || 0;
+                const otherScannedQty = otherScanned[sku]?.[mrp] || 0;
+                const currentScannedQty = currentScanned[sku]?.[mrp] || 0;
+                const remQty = billedQty - (otherScannedQty + currentScannedQty);
+
+                if (caseQty > 1 && remQty >= caseQty) {
+                    setBarcodeCaseDialog({
+                        open: true,
+                        sku,
+                        productName: config?.sku_name_map?.[sku] || sku,
+                        mrp,
+                        caseQty,
+                        type,
+                        value: data
+                    });
+                    return;
+                }
+            }
+            handleUpdateScannedItem(sku, mrp, qty, true, { type, value: data, desc: `Scanned ${type === "scan_barcode" ? "barcode" : "CBU"}: ${data}` });
         } else {
             setConflictDialog({
                 open: true,
@@ -431,7 +463,30 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                         value: o
                     };
                 }),
-                onSelect: (val) => handleUpdateScannedItem(val.sku, val.mrp, qty, true, { type, value: data, desc: `Selected ${val.sku} from multiple matches for ${type === "scan_barcode" ? "barcode" : "CBU"}: ${data}` })
+                onSelect: (val) => {
+                    if (type === "scan_barcode") {
+                        const { sku, mrp } = val;
+                        const caseQty = config?.case_config?.[sku] || 0;
+                        const billedQty = config?.bill_qty_map[sku]?.[mrp] || 0;
+                        const otherScannedQty = otherScanned[sku]?.[mrp] || 0;
+                        const currentScannedQty = currentScanned[sku]?.[mrp] || 0;
+                        const remQty = billedQty - (otherScannedQty + currentScannedQty);
+
+                        if (caseQty > 1 && remQty >= caseQty) {
+                            setBarcodeCaseDialog({
+                                open: true,
+                                sku,
+                                productName: config?.sku_name_map?.[sku] || sku,
+                                mrp,
+                                caseQty,
+                                type,
+                                value: data
+                            });
+                            return;
+                        }
+                    }
+                    handleUpdateScannedItem(val.sku, val.mrp, qty, true, { type, value: data, desc: `Selected ${val.sku} from multiple matches for ${type === "scan_barcode" ? "barcode" : "CBU"}: ${data}` })
+                }
             });
         }
     };
@@ -769,6 +824,30 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
                 description={alertConfig?.description}
                 onConfirm={alertConfig?.onConfirm || (() => { })}
                 extraAction={alertConfig?.extraAction}
+            />
+
+            <BarcodeCaseDialog
+                open={barcodeCaseDialog.open}
+                onOpenChange={(o) => setBarcodeCaseDialog(prev => ({ ...prev, open: o }))}
+                sku={barcodeCaseDialog.sku}
+                productName={barcodeCaseDialog.productName}
+                mrp={barcodeCaseDialog.mrp}
+                caseQty={barcodeCaseDialog.caseQty}
+                onSelect={(isCase) => {
+                    const finalQty = isCase ? barcodeCaseDialog.caseQty : 1;
+                    handleUpdateScannedItem(
+                        barcodeCaseDialog.sku,
+                        barcodeCaseDialog.mrp,
+                        finalQty,
+                        true,
+                        {
+                            type: barcodeCaseDialog.type,
+                            value: barcodeCaseDialog.value,
+                            desc: `Added ${isCase ? "Case" : "Piece"} of ${barcodeCaseDialog.sku}`
+                        }
+                    );
+                    focusInput();
+                }}
             />
 
             <SaveConfirmationDialog
