@@ -6,7 +6,7 @@ import { useNotification } from "@refinedev/core";
 import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { SalesScanSummary, BillSummaryDialog, MismatchItem } from "./scanning-interface";
+import { SalesScanSummary, BillSummaryDialog, MismatchItem, SalesScanDetail } from "./scanning-interface";
 import { AnomalyDialog } from "./components/AnomalyDialog";
 import { downloadFromFilePath } from "@/lib/download";
 import { Card, CardContent } from "@/components/ui/card";
@@ -82,10 +82,10 @@ const SalesScanFilters: React.FC<{
 
 export const SalesScanSummaryPage = () => {
     const { open } = useNotification();
-    const [selectedScan, setSelectedScan] = useState<SalesScanSummary | null>(null);
-    const [mismatchData, setMismatchData] = useState<MismatchItem[]>([]);
+    const [selectedScan, setSelectedScan] = useState<SalesScanSummary | SalesScanDetail | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [anomalyDialogOpen, setAnomalyDialogOpen] = useState(false);
+    const [isVideoLoading, setIsVideoLoading] = useState(false);
 
     const columns = useMemo(() => {
         const columnHelper = createColumnHelper<SalesScanSummary>();
@@ -178,22 +178,38 @@ export const SalesScanSummaryPage = () => {
     const handleRowClick = async (row: SalesScanSummary) => {
         setSelectedScan(row);
         setDialogOpen(true);
-        setMismatchData([]); // Reset while loading
 
         try {
-            const res = await dataProvider.custom({
-                url: "sales_scan_mismatch/",
-                method: "post",
-                payload: { scan_id: row.id }
+            const res = await dataProvider.getOne({
+                resource: "sales_scan",
+                id: row.id
             });
+            const detail = res.data as SalesScanDetail;
+            setSelectedScan(detail); // Update with full detail including logs and mismatches
+        } catch (error) {
+            open?.({ type: "error", message: "Failed to fetch scan details" });
+        }
+    };
 
-            if (Array.isArray(res.data)) {
-                setMismatchData(res.data);
+    const handleDownloadVideo = async () => {
+        if (!selectedScan?.id) return;
+        setIsVideoLoading(true);
+        try {
+            const res = await dataProvider.custom({
+                url: "video_process/",
+                method: "post",
+                payload: { scan_id: selectedScan.id }
+            });
+            if (res.data?.filepath) {
+                await downloadFromFilePath(res.data.filepath);
+                open?.({ type: "success", message: "Video Processed and Downloaded" });
             } else {
-                setMismatchData(res.data?.mismatches || []);
+                open?.({ type: "error", message: "Video processing failed" });
             }
         } catch (error) {
-            open?.({ type: "error", message: "Failed to fetch mismatches" });
+            open?.({ type: "error", message: "Video Processing Error" });
+        } finally {
+            setIsVideoLoading(false);
         }
     };
 
@@ -231,9 +247,11 @@ export const SalesScanSummaryPage = () => {
             <BillSummaryDialog
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
-                items={mismatchData}
+                detail={selectedScan}
+                items={(selectedScan as SalesScanDetail)?.mismatches || []}
                 onDownload={handleDownloadSummary}
-                partyName={selectedScan?.party_name}
+                onDownloadVideo={handleDownloadVideo}
+                isVideoLoading={isVideoLoading}
             />
 
             <AnomalyDialog

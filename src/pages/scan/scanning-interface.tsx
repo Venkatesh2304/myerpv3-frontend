@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { format } from "date-fns";
+import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +16,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import {
     Dialog,
     DialogContent,
@@ -31,6 +41,12 @@ import { AddBarcodeDialog } from "@/components/scan/add-barcode-dialog";
 import { CBUVerificationDialog } from "@/components/scan/cbu-verification-dialog";
 import { NegativeQuantityDialog } from "@/components/scan/negative-quantity-dialog";
 import { BarcodeCaseDialog } from "@/components/scan/barcode-case-dialog";
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from "@/components/ui/tabs";
 
 export interface SalesScanSummary {
     id: string | number;
@@ -58,6 +74,7 @@ export interface SalesScanDetail {
     mismatches?: MismatchItem[];
     bill_date?: string;
     scanned_time?: string;
+    logs?: ScanLogItem[][] | ScanLogItem[];
 }
 
 export interface MismatchItem {
@@ -73,7 +90,7 @@ interface ScanLogItem {
     sku?: string;
     value: string | number;
     desc: string;
-    timestamp: number;
+    timestamp: any;
 }
 
 function ConflictResolverDialog({ open, onOpenChange, title, options, onSelect }: {
@@ -129,69 +146,139 @@ function ConflictResolverDialog({ open, onOpenChange, title, options, onSelect }
     );
 }
 
-export function BillSummaryDialog({ open, onOpenChange, items, onDownload, partyName }: {
+export function BillSummaryDialog({ open, onOpenChange, detail, items, onDownload, onDownloadVideo, isVideoLoading }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    detail?: SalesScanDetail | SalesScanSummary | null;
     items: MismatchItem[];
     onDownload: () => void;
-    partyName?: string;
+    onDownloadVideo?: () => Promise<void>;
+    isVideoLoading?: boolean;
 }) {
-    if (!open) return null;
+    const flattenedLogs = useMemo(() => {
+        if (!detail || !("logs" in detail) || !detail.logs) return [];
+        return detail.logs.flat();
+    }, [detail]);
 
+    if (!open) return null;
+    const partyName = detail?.party_name;
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md w-[95vw] max-h-[90vh] flex flex-col p-0">
+            <DialogContent className="sm:max-w-[90vw] lg:max-w-6xl w-[95vw] max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-4 border-b">
                     <div className="flex justify-between items-center pr-10">
                         <div>
-                            <DialogTitle>Mismatch</DialogTitle>
+                            <DialogTitle>Details</DialogTitle>
                             {partyName && <div className="text-xs text-muted-foreground mt-0.5">{partyName}</div>}
                         </div>
-                        <Button onClick={onDownload} variant="secondary" size="sm">
-                            Download
-                        </Button>
+                        <div className="flex gap-2">
+                            {onDownloadVideo && (
+                                <Button onClick={onDownloadVideo} variant="outline" size="sm" disabled={isVideoLoading}>
+                                    {isVideoLoading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
+                                    {isVideoLoading ? "Processing..." : "Download Video"}
+                                </Button>
+                            )}
+                            <Button onClick={onDownload} variant="secondary" size="sm">
+                                Download PDF
+                            </Button>
+                        </div>
                     </div>
                 </DialogHeader>
-                <div className="flex-1 overflow-auto p-4 space-y-3">
-                    {items.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                            No data found
-                        </div>
-                    ) : (
-                        items.map((item, idx) => {
-                            const isMismatch = item.billed !== item.scanned;
-                            return (
-                                <div
-                                    key={idx}
-                                    className={`p-3 rounded-lg border ${isMismatch
-                                        ? "bg-red-50/50 border-red-200"
-                                        : "bg-card border-border"
-                                        }`}
-                                >
-                                    <div className="font-medium text-sm leading-tight mb-2">
-                                        {item.name || item.sku}
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2 text-xs">
-                                        <div>
-                                            <div className="text-muted-foreground mb-0.5">MRP</div>
-                                            <div className="font-semibold">₹{item.mrp}</div>
+
+                <Tabs defaultValue="mismatch" className="flex-1 flex flex-col overflow-hidden">
+                    <div className="px-4 pt-2 border-b">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="mismatch">Mismatch</TabsTrigger>
+                            <TabsTrigger value="detail">Detail</TabsTrigger>
+                        </TabsList>
+                    </div>
+
+                    <TabsContent value="mismatch" className="flex-1 overflow-auto p-4 space-y-3 mt-0">
+                        {items.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                                No mismatches found
+                            </div>
+                        ) : (
+                            items.map((item, idx) => {
+                                const isMismatch = item.billed !== item.scanned;
+                                return (
+                                    <div
+                                        key={idx}
+                                        className={`p-3 rounded-lg border ${isMismatch
+                                            ? "bg-red-50/50 border-red-200"
+                                            : "bg-card border-border"
+                                            }`}
+                                    >
+                                        <div className="font-medium text-sm leading-tight mb-2">
+                                            {item.name || item.sku}
                                         </div>
-                                        <div>
-                                            <div className="text-muted-foreground mb-0.5 text-center">Billed</div>
-                                            <div className="font-semibold text-center">{item.billed}</div>
-                                        </div>
-                                        <div>
-                                            <div className="text-muted-foreground mb-0.5 text-right">Scanned</div>
-                                            <div className={`font-bold text-right ${isMismatch ? "text-red-600" : "text-green-600"}`}>
-                                                {item.scanned}
+                                        <div className="grid grid-cols-3 gap-2 text-xs">
+                                            <div>
+                                                <div className="text-muted-foreground mb-0.5">MRP</div>
+                                                <div className="font-semibold">₹{item.mrp}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-muted-foreground mb-0.5 text-center">Billed</div>
+                                                <div className="font-semibold text-center">{item.billed}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-muted-foreground mb-0.5 text-right">Scanned</div>
+                                                <div className={`font-bold text-right ${isMismatch ? "text-red-600" : "text-green-600"}`}>
+                                                    {item.scanned}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })
-                    )}
-                </div>
+                                );
+                            })
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="detail" className="flex-1 overflow-auto p-0 mt-0">
+                        {flattenedLogs.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground px-4">
+                                No logs found
+                            </div>
+                        ) : (
+                            <div className="border-rounded-md">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="text-xs uppercase bg-muted/50">
+                                            <TableHead className="h-10 px-4">Time</TableHead>
+                                            <TableHead className="h-10 px-4">Product</TableHead>
+                                            <TableHead className="h-10 px-4">MRP</TableHead>
+                                            <TableHead className="h-10 px-4">Type</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {flattenedLogs.map((log, idx) => {
+                                            const productName = log.sku && detail && ("sku_name_map" in detail) ? detail.sku_name_map?.[log.sku] : null;
+                                            const mrps = log.sku && detail && ("bill_qty_map" in detail) ? Object.keys(detail.bill_qty_map[log.sku] || {}) : [];
+                                            const mrpDisplay = mrps.length > 0 ? `₹${mrps.join(", ")}` : "-";
+
+                                            const formattedTime = log.timestamp ? (typeof log.timestamp === "number" || !isNaN(Number(log.timestamp)) ? format(new Date(Number(log.timestamp)), "HH:mm:ss") : log.timestamp) : "-";
+
+                                            return (
+                                                <TableRow key={idx} className="text-sm hover:bg-muted/30">
+                                                    <TableCell className="py-3 px-4 whitespace-nowrap">{formattedTime}</TableCell>
+                                                    <TableCell className="py-3 px-4 min-w-[200px]">
+                                                        <div className="font-medium">{productName || log.sku || "-"}</div>
+                                                        {productName && <div className="text-xs text-muted-foreground">{log.sku}</div>}
+                                                    </TableCell>
+                                                    <TableCell className="py-3 px-4 font-mono">{mrpDisplay}</TableCell>
+                                                    <TableCell className="py-3 px-4">
+                                                        <span className="bg-muted px-2 py-1 rounded text-xs font-bold">{log.type}</span>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )}
+                    </TabsContent>
+
+                </Tabs>
             </DialogContent>
         </Dialog>
     );
@@ -245,6 +332,7 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
     const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
     const [mismatchData, setMismatchData] = useState<MismatchItem[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+    const [isVideoLoading, setIsVideoLoading] = useState(false);
     const [cbuVerificationDialog, setCbuVerificationDialog] = useState<{
         open: boolean;
         sku: string;
@@ -326,6 +414,28 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
     };
 
 
+    const handleDownloadVideo = async () => {
+        if (!scanId) return;
+        setIsVideoLoading(true);
+        try {
+            const res = await dataProvider.custom({
+                url: "video_process/",
+                method: "post",
+                payload: { scan_id: scanId }
+            });
+            if (res.data?.filepath) {
+                await downloadFromFilePath(res.data.filepath);
+                open?.({ type: "success", message: "Video Processed and Downloaded" });
+            } else {
+                open?.({ type: "error", message: "Video processing failed" });
+            }
+        } catch (error) {
+            open?.({ type: "error", message: "Video Processing Error" });
+        } finally {
+            setIsVideoLoading(false);
+        }
+    };
+
     const handleDownloadSummary = async () => {
         if (!scanId) return;
         try {
@@ -350,6 +460,14 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
         setSummaryDialogOpen(true);
         setMismatchData([]); // Clear previous data
         try {
+            // Refresh detail to get latest logs
+            dataProvider.getOne({
+                resource: "sales_scan",
+                id: scanId,
+            }).then((res) => {
+                setConfig(res.data as SalesScanDetail);
+            });
+
             const res = await dataProvider.custom({
                 url: "sales_scan_mismatch/",
                 method: "post",
@@ -916,9 +1034,11 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
             <BillSummaryDialog
                 open={summaryDialogOpen}
                 onOpenChange={(o) => { if (!o) { setSummaryDialogOpen(false); focusInput(); } }}
+                detail={config}
                 items={mismatchData}
                 onDownload={handleDownloadSummary}
-                partyName={config?.party_name}
+                onDownloadVideo={handleDownloadVideo}
+                isVideoLoading={isVideoLoading}
             />
 
             <AddBarcodeDialog
