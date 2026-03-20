@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { Loader2, Download } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -152,7 +152,7 @@ export function BillSummaryDialog({ open, onOpenChange, detail, items, onDownloa
     detail?: SalesScanDetail | SalesScanSummary | null;
     items: MismatchItem[];
     onDownload: () => void;
-    onDownloadVideo?: () => Promise<void>;
+    onDownloadVideo?: (timestamp?: any) => Promise<void>;
     isVideoLoading?: boolean;
 }) {
     const flattenedLogs = useMemo(() => {
@@ -248,6 +248,7 @@ export function BillSummaryDialog({ open, onOpenChange, detail, items, onDownloa
                                             <TableHead className="h-10 px-4">Product</TableHead>
                                             <TableHead className="h-10 px-4">MRP</TableHead>
                                             <TableHead className="h-10 px-4">Type</TableHead>
+                                            <TableHead className="h-10 px-4 text-center">Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -268,6 +269,17 @@ export function BillSummaryDialog({ open, onOpenChange, detail, items, onDownloa
                                                     <TableCell className="py-3 px-4 font-mono">{mrpDisplay}</TableCell>
                                                     <TableCell className="py-3 px-4">
                                                         <span className="bg-muted px-2 py-1 rounded text-xs font-bold">{log.type}</span>
+                                                    </TableCell>
+                                                    <TableCell className="py-3 px-4 text-center">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon-sm"
+                                                            onClick={() => onDownloadVideo?.(log.timestamp)}
+                                                            disabled={isVideoLoading}
+                                                            title="Download video for this log"
+                                                        >
+                                                            <Download className="h-4 w-4" />
+                                                        </Button>
                                                     </TableCell>
                                                 </TableRow>
                                             );
@@ -414,14 +426,17 @@ export function ScanningInterface({ scanId, billNo, onBack }: ScanningInterfaceP
     };
 
 
-    const handleDownloadVideo = async () => {
+    const handleDownloadVideo = async (timestamp?: any) => {
         if (!scanId) return;
         setIsVideoLoading(true);
         try {
             const res = await dataProvider.custom({
                 url: "video_process/",
                 method: "post",
-                payload: { scan_id: scanId }
+                payload: {
+                    scan_id: scanId,
+                    ...(timestamp && { timestamp })
+                }
             });
             if (res.data?.filepath) {
                 await downloadFromFilePath(res.data.filepath);

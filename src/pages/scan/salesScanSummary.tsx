@@ -191,14 +191,17 @@ export const SalesScanSummaryPage = () => {
         }
     };
 
-    const handleDownloadVideo = async () => {
+    const handleDownloadVideo = async (timestamp?: any) => {
         if (!selectedScan?.id) return;
         setIsVideoLoading(true);
         try {
             const res = await dataProvider.custom({
                 url: "video_process/",
                 method: "post",
-                payload: { scan_id: selectedScan.id }
+                payload: {
+                    scan_id: selectedScan.id,
+                    ...(timestamp && { timestamp })
+                }
             });
             if (res.data?.filepath) {
                 await downloadFromFilePath(res.data.filepath);
