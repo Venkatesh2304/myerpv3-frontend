@@ -8,6 +8,7 @@ import type { PropsWithChildren } from "react";
 import { Sidebar } from "./sidebar";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useBack } from "@refinedev/core";
+import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 
 export function Layout({ children }: PropsWithChildren) {
   const back = useBack();
@@ -45,6 +46,7 @@ export function Layout({ children }: PropsWithChildren) {
             {children}
           </main>
         </SidebarInset>
+        <AssistantWidget />
       </SidebarProvider>
     </ThemeProvider>
   );

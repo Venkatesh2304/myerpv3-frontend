@@ -8,6 +8,7 @@ import {
 } from "@refinedev/core";
 import RestDataProvider from "../rest-data-provider/index";
 import axios from "axios";
+import { errorTracker } from "./error-tracker";
 
 export const httpClient = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_API_URL,
@@ -21,6 +22,27 @@ httpClient.interceptors.request.use((config) => {
     }
     return config;
 });
+
+httpClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        try {
+            errorTracker.recordFailure({
+                url: error.config?.url,
+                method: error.config?.method?.toUpperCase(),
+                params: error.config?.params,
+                data: error.config?.data,
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                responseData: error.response?.data,
+                timestamp: new Date().toISOString(),
+            });
+        } catch (e) {
+            console.error("Failed to record error in errorTracker", e);
+        }
+        return Promise.reject(error);
+    }
+);
 
 type DrfDataProviderConfig = {
     baseUrl?: string;
