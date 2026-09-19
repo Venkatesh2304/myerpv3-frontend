@@ -9,16 +9,39 @@ export interface FailedRequestInfo {
   timestamp: string;
 }
 
+type ErrorListener = (failure: FailedRequestInfo) => void;
+
 class ErrorTracker {
   private failures: FailedRequestInfo[] = [];
-  private listeners: Array<() => void> = [];
+  private listeners: Array<ErrorListener> = [];
+
+  constructor() {
+    if (typeof window !== "undefined") {
+      window.addEventListener("unhandledrejection", (event) => {
+        // Ignore cancelled requests or assistant endpoint errors to avoid loops
+        const reason = event.reason;
+        if (reason?.config?.url?.includes("/assistant/chat")) return;
+        this.recordFailure({
+          url: reason?.config?.url || window.location.pathname,
+          method: reason?.config?.method?.toUpperCase() || "ASYNC",
+          status: reason?.response?.status || 500,
+          statusText: reason?.message || "Unhandled Promise Rejection",
+          responseData: reason?.response?.data || String(reason),
+          timestamp: new Date().toISOString(),
+        });
+      });
+    }
+  }
 
   public recordFailure(failure: FailedRequestInfo) {
+    // Avoid tracking errors originating from the assistant endpoint itself to prevent feedback loops
+    if (failure.url?.includes("/assistant/chat")) return;
+
     this.failures.push(failure);
     if (this.failures.length > 20) {
       this.failures.shift();
     }
-    this.notify();
+    this.notify(failure);
   }
 
   public getLatest(): FailedRequestInfo | null {
@@ -32,22 +55,21 @@ class ErrorTracker {
 
   public clear() {
     this.failures = [];
-    this.notify();
   }
 
-  public subscribe(listener: () => void) {
+  public subscribe(listener: ErrorListener) {
     this.listeners.push(listener);
     return () => {
       this.listeners = this.listeners.filter((l) => l !== listener);
     };
   }
 
-  private notify() {
+  private notify(failure: FailedRequestInfo) {
     this.listeners.forEach((l) => {
       try {
-        l();
+        l(failure);
       } catch (e) {
-        console.error(e);
+        console.error("Error in errorTracker listener", e);
       }
     });
   }
