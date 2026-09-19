@@ -91,7 +91,7 @@ export function AssistantWidget() {
     });
 
     const initial = errorTracker.getLatest();
-    if (initial) {
+    if (initial && (Date.now() - new Date(initial.timestamp).getTime() < 2 * 60 * 1000)) {
       setRecentFailure(initial);
     }
 
@@ -184,6 +184,10 @@ export function AssistantWidget() {
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         },
       ]);
+
+      if (effectiveType === "check_failure") {
+        setRecentFailure(null);
+      }
     } catch (err: any) {
       console.error("Assistant chat error:", err);
       const errMsg =
@@ -233,6 +237,8 @@ export function AssistantWidget() {
 
   const handleResetChat = () => {
     setConversationId(null);
+    setRecentFailure(null);
+    setHasUnviewedFailure(false);
     setMessages([
       {
         id: `welcome-${Date.now()}`,
@@ -435,9 +441,18 @@ export function AssistantWidget() {
                 <span className="truncate">
                   ⚠️ Error captured: {recentFailure.method} {recentFailure.url?.split("?")[0] || ""}
                 </span>
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 shrink-0 ml-1">
-                  Type note or hit Send
-                </span>
+                <div className="flex items-center gap-1.5 shrink-0 ml-1">
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                    Type note or hit Send
+                  </span>
+                  <button
+                    onClick={() => setRecentFailure(null)}
+                    className="p-0.5 rounded hover:bg-amber-200/60 dark:hover:bg-amber-900/60 text-amber-600 hover:text-amber-900 cursor-pointer transition-colors"
+                    title="Dismiss captured error"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
               </div>
             )}
             <div className="flex items-center gap-2">

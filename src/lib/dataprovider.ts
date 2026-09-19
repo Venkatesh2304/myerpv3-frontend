@@ -11,7 +11,7 @@ import axios from "axios";
 import { errorTracker } from "./error-tracker";
 
 export const httpClient = axios.create({
-    baseURL: import.meta.env.VITE_BACKEND_API_URL,
+    baseURL: import.meta.env.VITE_BACKEND_API_URL || "http://13.235.142.203:5000",
     withCredentials: true
 });
 

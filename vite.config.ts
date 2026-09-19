@@ -16,4 +16,5 @@ export default defineConfig({
     port: 8000,
     allowedHosts: true,
   },
+  envPrefix: ["VITE_", "NEXT_PUBLIC_"],
 });
